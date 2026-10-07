@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="lapis" cx="42%" cy="32%" r="80%">
+      <stop offset="0" stop-color="#3b5fc4"/>
+      <stop offset="0.55" stop-color="#23419a"/>
+      <stop offset="1" stop-color="#13275f"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6dd8e"/>
+      <stop offset="0.5" stop-color="#d9ac45"/>
+      <stop offset="1" stop-color="#a97a22"/>
+    </linearGradient>
+    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#efe1bd"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff2b8" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#fff2b8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- disc + gold rings -->
+  <circle cx="256" cy="256" r="250" fill="url(#lapis)"/>
+  <circle cx="256" cy="256" r="244" fill="none" stroke="url(#gold)" stroke-width="12"/>
+  <circle cx="256" cy="256" r="224" fill="none" stroke="#e7c774" stroke-opacity="0.45" stroke-width="2.5"/>
+  <!-- a few lapis flecks -->
+  <g fill="#f6dd8e" fill-opacity="0.55">
+    <circle cx="118" cy="150" r="2.6"/><circle cx="392" cy="128" r="2.2"/><circle cx="420" cy="250" r="2"/><circle cx="96" cy="262" r="2.2"/><circle cx="150" cy="96" r="1.8"/>
+  </g>
+
+  <!-- the AI network above the book -->
+  <g stroke="url(#gold)" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M256 142 L204 176 M256 142 L308 176 M256 142 L228 100 M256 142 L284 100 M204 176 L228 100 M308 176 L284 100 M204 176 L308 176 M228 100 L284 100"/>
+  </g>
+  <g stroke="#13275f" stroke-width="3">
+    <circle cx="256" cy="142" r="15" fill="url(#gold)"/>
+    <circle cx="204" cy="176" r="11" fill="#f6dd8e"/>
+    <circle cx="308" cy="176" r="11" fill="#f6dd8e"/>
+    <circle cx="228" cy="100" r="10" fill="#f6dd8e"/>
+    <circle cx="284" cy="100" r="10" fill="#f6dd8e"/>
+  </g>
+
+  <!-- spark from the network into the book -->
+  <circle cx="256" cy="212" r="26" fill="url(#glow)"/>
+  <path d="M256 190 L262 206 L278 212 L262 218 L256 234 L250 218 L234 212 L250 206 Z" fill="#fff6cf"/>
+
+  <!-- open book -->
+  <path d="M256 352 C 208 330 150 326 104 342 L104 228 C 150 212 208 216 256 238 Z" fill="url(#page)" stroke="#c99a38" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M256 352 C 304 330 362 326 408 342 L408 228 C 362 212 304 216 256 238 Z" fill="url(#page)" stroke="#c99a38" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M256 238 L256 352" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M98 350 C 150 334 208 340 256 362 C 304 340 362 334 414 350" fill="none" stroke="url(#gold)" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- left page: writing lines + a sigma; right page: a growing bar chart -->
+  <g stroke="#2a4a9e" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M132 252 C 160 244 192 246 224 258 M132 278 C 160 270 192 272 224 284"/>
+    <path d="M196 322 L158 322 L180 304 L158 288 L196 288" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+  <g fill="#2a4a9e">
+    <rect x="300" y="300" width="20" height="28" rx="3"/>
+    <rect x="330" y="278" width="20" height="50" rx="3"/>
+    <rect x="360" y="252" width="20" height="76" rx="3"/>
+  </g>
+  <path d="M296 270 L330 252 L352 258 L382 230" fill="none" stroke="#c99a38" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,38 @@
+# Production reverse proxy (Caddy): same origin for the web app and the API, automatic HTTPS, security headers on every response.
+# Replace app.example.com, the web root and the Supabase host. Run:  caddy run --config deploy/Caddyfile
+# Start the API with:  NODE_ENV=production TRUST_PROXY=true API_HOST=127.0.0.1  (so only this proxy can reach it).
+#
+# CSP note: index.html has ONE small inline script (it applies the saved dark/light choice before first paint, so there is no flash).
+# It is allowed by its hash, not by 'unsafe-inline'. Print the hash for the exact build you ship:  npm run csp:hash -w @copilot/web
+# and paste it below. If you change that script, the hash changes and the page will (safely) lose its pre-paint theme until you update it.
+
+app.example.com {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		X-Frame-Options "DENY"
+		Cross-Origin-Opener-Policy "same-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-JRkNpRF0/29CX4d2iq0EtK9AQII/S2ECcDMXlanh9n8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://YOUR-PROJECT-REF.supabase.co; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# The API (same origin, so no CORS is needed or enabled).
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3001
+	}
+
+	# The built web app, with the single-page-app fallback. Hashed assets are cached for a year; index.html never is.
+	handle {
+		root * /var/www/copilot/dist
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@html not path /assets/*
+		header @html Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

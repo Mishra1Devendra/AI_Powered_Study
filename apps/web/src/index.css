@@ -1,0 +1,500 @@
+@import "tailwindcss";
+@import "./theme-dark.generated.css";
+
+/* `dark:` utilities follow the saved choice (the class on <html>), not only the device setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * DESIGN TOKENS - "Scholar". The identity comes from the app's emblem: lapis blue and gold, on warm paper (light) or deep ink-navy (dark).
+ * Every screen is built from these tokens (the utility classes slate-*, brand-*, accent-*), so changing a value here changes the whole app.
+ * Contrast of every text/background pair used was checked against WCAG AA (4.5:1) - keep that when changing a value.
+ */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Page titles: a calm, academic serif (self-hosted, so no third-party font request). */
+  --font-display: "Newsreader Variable", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+
+  /* Neutrals: warm "paper" and ink instead of cold grey. 50 = page, white = cards, 200 = hairlines, 500-600 = secondary text, 900 = ink. */
+  --color-slate-50: #f7f5ef;
+  --color-slate-100: #efece3;
+  --color-slate-200: #e3dfd3;
+  --color-slate-300: #cdc8b9;
+  --color-slate-400: #9b9686;
+  --color-slate-500: #6b675b;
+  --color-slate-600: #55524a;
+  --color-slate-700: #3d3b35;
+  --color-slate-800: #26251f;
+  --color-slate-900: #14130f;
+  --color-slate-950: #0c0b09;
+
+  /* Brand: lapis blue (the emblem's disc). Primary actions, links, active states. */
+  --color-brand-50: #eef3ff;
+  --color-brand-100: #dde7ff;
+  --color-brand-200: #c2d3fd;
+  --color-brand-300: #9bb7fa;
+  --color-brand-400: #6f93f3;
+  --color-brand-500: #4b73e6;
+  --color-brand-600: #2f55c9;
+  --color-brand-700: #2644a6;
+  --color-brand-800: #1f3685;
+  --color-brand-900: #1a2c6a;
+
+  /* Accent: gold (the emblem's rings). Highlights only - streaks, "recommended", small flourishes - never body text on white. */
+  --color-accent-50: #fdf7e6;
+  --color-accent-100: #faebbd;
+  --color-accent-200: #f3d98a;
+  --color-accent-300: #e8c25c;
+  --color-accent-400: #d9a93a;
+  --color-accent-500: #c28f24;
+  --color-accent-600: #a1721a;
+  --color-accent-700: #7e5715;
+  --color-accent-800: #5f4313;
+  --color-accent-900: #473210;
+
+  /* Soft, warm-tinted shadows (never pure black) and a generous card radius. */
+  --shadow-card: 0 1px 2px rgb(60 48 20 / 0.05), 0 8px 24px -8px rgb(60 48 20 / 0.1);
+  --shadow-pop: 0 2px 4px rgb(60 48 20 / 0.06), 0 14px 32px -10px rgb(60 48 20 / 0.18);
+  --radius-card: 1.25rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
+}
+/* Slim scrollbars everywhere (the chunky default one in the sidebar and long lists looked unfinished). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-slate-300);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ------------------------------------------------------------------------------------------------
+   DARK MODE. The palette itself is swapped in theme-dark.generated.css. This block handles what a palette swap cannot express:
+   the white card surface, button label colour, overlays and the hover states. Same shapes as light mode: no separate "dark look".
+   ------------------------------------------------------------------------------------------------ */
+html.dark {
+  --surface: #111833;
+  --shadow-card: 0 0 0 1px #232b47;
+  --shadow-pop: 0 0 0 1px #3a4776, 0 14px 32px -10px rgb(0 0 0 / 0.55);
+}
+html.dark .bg-white,
+html.dark .hover\:bg-white:hover,
+html.dark .focus\:bg-white:focus {
+  background-color: var(--surface);
+}
+/* Responsive / hover variants of the white surface need the same treatment (a variant is a different class name). */
+html.dark .md\:bg-white {
+  background-color: var(--surface);
+}
+html.dark .hover\:bg-white\/70:hover {
+  background-color: rgb(27 37 71 / 0.8);
+}
+html.dark .bg-white\/95 {
+  background-color: rgb(17 24 51 / 0.95);
+}
+html.dark .bg-white\/90 {
+  background-color: rgb(11 16 32 / 0.85);
+}
+html.dark .bg-white\/80 {
+  background-color: rgb(11 16 32 / 0.8);
+}
+html.dark .text-brand-800,
+html.dark .text-brand-900 {
+  color: var(--color-slate-800);
+}
+/* Primary buttons: the brand colour becomes a light lapis, so the label turns dark to stay readable. */
+html.dark .bg-brand-600.text-white {
+  color: #0b1020;
+}
+html.dark .ring-slate-200\/70 {
+  --tw-ring-color: #232b47;
+}
+/* Dim overlays behind dialogs: black in dark mode (the swapped slate-900 would otherwise turn them into a white veil). */
+html.dark [class*="bg-slate-900/"] {
+  background-color: rgb(0 0 0 / 0.7);
+}
+/* The dark hero card and the sign-in side panel keep their deep surface in both themes. */
+html.dark .palette-light.bg-slate-900 {
+  background-color: var(--surface);
+  box-shadow: inset 0 0 0 1px #232b47;
+}
+/* Code blocks stay dark in both themes. */
+html.dark .tutor-prose pre {
+  background: #070b18;
+  color: #e4e8f4;
+  box-shadow: inset 0 0 0 1px #232b47;
+}
+html.dark ::placeholder {
+  color: #6e7aa3;
+}
+html.dark ::selection {
+  background: #2b3c86;
+}
+html.dark *::-webkit-scrollbar-thumb {
+  background: #333d62;
+  background-clip: content-box;
+}
+html.dark,
+html.dark * {
+  scrollbar-color: #333d62 transparent;
+}
+
+/* Hover and press feedback (both themes): buttons and links respond, clickable cards lift, a press pushes down slightly. */
+a,
+button,
+[role="radio"],
+[role="tab"] {
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.2s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+button:not(:disabled):active,
+a.rounded-xl:active {
+  transform: scale(0.985);
+}
+.bg-brand-600:not(:disabled):hover {
+  box-shadow: 0 6px 18px -6px rgb(47 85 201 / 0.55);
+}
+html.dark .bg-brand-600:not(:disabled):hover {
+  background-color: #a5b9ff;
+  box-shadow: 0 6px 20px -6px rgb(138 164 255 / 0.5);
+}
+/* Cards that are links lift a little and gain a stronger edge. */
+a.shadow-card:hover,
+a.bg-white.ring-1:hover,
+li > a.block:hover {
+  box-shadow: var(--shadow-pop);
+}
+html.dark a.shadow-card:hover,
+html.dark a.bg-white.ring-1:hover,
+html.dark li > a.block:hover {
+  background-color: #162044;
+}
+html.dark button.ring-1:not(:disabled):hover,
+html.dark a.ring-1:hover,
+html.dark [role="radio"]:hover,
+html.dark button.bg-white:not(:disabled):hover,
+html.dark a.bg-white:hover {
+  background-color: #1b2547;
+  --tw-ring-color: #4a5a99;
+}
+html.dark nav a:hover,
+html.dark nav button:hover {
+  background-color: #1b2547;
+  color: #ffffff;
+}
+
+body {
+  @apply bg-slate-50 font-sans text-slate-900 antialiased;
+  /* A faint wash of lapis at the top corner gives the paper some depth without adding noise. */
+  background-image: radial-gradient(70rem 28rem at 90% -12rem, rgb(47 85 201 / 0.06), transparent 70%);
+  background-attachment: fixed;
+}
+html.dark body {
+  background-image: radial-gradient(70rem 28rem at 90% -12rem, rgb(138 164 255 / 0.07), transparent 70%);
+}
+::selection {
+  background: var(--color-brand-100);
+}
+
+/* Page titles: the serif, everywhere (compact bars such as the tutor and the note workspace included). */
+main h1,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+main h1.text-2xl {
+  font-size: 1.95rem;
+  line-height: 2.3rem;
+  font-weight: 600;
+}
+/* Small capital labels (eyebrows, table heads): quiet, wide-tracked. */
+.uppercase {
+  letter-spacing: 0.07em;
+}
+
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-brand-600;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.25s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Markdown rendered from the tutor (no typography plugin: small, deliberate rules). */
+.tutor-prose {
+  overflow-wrap: anywhere;
+}
+.tutor-prose > :first-child {
+  margin-top: 0;
+}
+.tutor-prose > :last-child {
+  margin-bottom: 0;
+}
+.tutor-prose p,
+.tutor-prose ul,
+.tutor-prose ol,
+.tutor-prose blockquote,
+.tutor-prose pre {
+  margin: 0.75rem 0;
+}
+.tutor-prose ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+}
+.tutor-prose ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+}
+.tutor-prose li + li {
+  margin-top: 0.25rem;
+}
+.tutor-prose h1,
+.tutor-prose h2,
+.tutor-prose h3,
+.tutor-prose h4 {
+  margin: 1.1rem 0 0.4rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-slate-900);
+}
+.tutor-prose h1 { font-size: 1.2rem; }
+.tutor-prose h2 { font-size: 1.1rem; }
+.tutor-prose h3,
+.tutor-prose h4 { font-size: 1rem; }
+.tutor-prose a {
+  color: var(--color-brand-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tutor-prose strong { font-weight: 600; color: var(--color-slate-900); }
+.tutor-prose blockquote {
+  border-left: 3px solid var(--color-slate-200);
+  padding-left: 0.9rem;
+  color: var(--color-slate-600);
+}
+.tutor-prose code {
+  border-radius: 0.375rem;
+  background: var(--color-slate-100);
+  padding: 0.1rem 0.35rem;
+  font-size: 0.875em;
+}
+.tutor-prose pre {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  background: var(--color-slate-900);
+  padding: 0.9rem 1rem;
+  color: var(--color-slate-100);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+.tutor-prose pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+.tutor-prose table {
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.tutor-prose th,
+.tutor-prose td {
+  border: 1px solid var(--color-slate-200);
+  padding: 0.4rem 0.7rem;
+  text-align: left;
+}
+.tutor-prose th { background: var(--color-slate-50); font-weight: 600; }
+.tutor-prose hr { margin: 1rem 0; border-color: var(--color-slate-200); }
+.tutor-prose .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+}
+
+/* Indeterminate progress (real percentage unknown): a bar sliding across the track. */
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+.indeterminate-bar {
+  animation: indeterminate 1.3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .indeterminate-bar {
+    animation: none;
+    left: 33%;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------
+   Sign-in / sign-up screens: an animated brand panel and a form that reacts. All of it is decorative
+   (aria-hidden) and is switched off by the reduced-motion rule above.
+   ------------------------------------------------------------------------------------------------ */
+.auth-aurora {
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(40% 40% at 25% 30%, rgb(47 85 201 / 0.7), transparent 70%),
+    radial-gradient(35% 35% at 78% 22%, rgb(120 150 250 / 0.38), transparent 70%),
+    radial-gradient(40% 40% at 60% 82%, rgb(232 194 92 / 0.1), transparent 70%);
+  filter: blur(40px);
+  animation: auth-drift 22s ease-in-out infinite alternate;
+}
+@keyframes auth-drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) rotate(0deg) scale(1);
+  }
+  to {
+    transform: translate3d(4%, 3%, 0) rotate(8deg) scale(1.08);
+  }
+}
+.auth-grid,
+.auth-grid::after {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgb(255 255 255 / 0.07) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 255 255 / 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+/* The same grid, brighter, revealed only around the pointer. */
+.auth-grid::after {
+  content: "";
+  background-image: linear-gradient(to right, rgb(255 255 255 / 0.28) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 255 255 / 0.28) 1px, transparent 1px);
+  -webkit-mask-image: radial-gradient(220px circle at var(--mx, 50%) var(--my, 35%), #000, transparent 70%);
+  mask-image: radial-gradient(220px circle at var(--mx, 50%) var(--my, 35%), #000, transparent 70%);
+}
+.auth-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 35%), rgb(232 194 92 / 0.16), transparent 65%);
+  pointer-events: none;
+}
+.auth-rise {
+  animation: fade-up 0.6s ease-out both;
+}
+.auth-main-glow {
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(closest-side, rgb(47 85 201 / 0.1), transparent);
+  pointer-events: none;
+}
+html.dark .auth-main-glow {
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.05), transparent);
+}
+/* A refused sign-in nudges the message sideways once, so the eye goes to it. */
+@keyframes shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(3px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-5px);
+  }
+  40%,
+  60% {
+    transform: translateX(5px);
+  }
+}
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Dark-mode tile backdrop (components/ui/TileSpotlight.tsx): a faint 56px grid; the four tiles around the mouse glow. Decorative only. */
+.tile-spotlight {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+.tile-spotlight::after {
+  content: "";
+  position: absolute;
+  left: var(--tx, 0px);
+  top: var(--ty, 0px);
+  width: 112px;
+  height: 112px;
+  background: radial-gradient(closest-side, rgb(99 132 255 / 0.18), transparent);
+  opacity: 0;
+  transition: opacity 0.2s ease, left 0.12s ease-out, top 0.12s ease-out;
+}
+.tile-spotlight[data-on]::after {
+  opacity: 1;
+}
+
+/* Mind map (features/study-tools/MindmapView.tsx): colours that read on light and dark pages. */
+.mm-label { fill: #0f172a; }
+.mm-root-label { fill: #ffffff; }
+html.dark .mm-label { fill: #e6ebf7; }
+.mm-node { cursor: pointer; outline: none; }
+.mm-node:focus-visible rect, .mm-node:hover rect { stroke-width: 3; }
+.mm-link { fill: none; stroke-width: 2; opacity: 0.55; }
+
+/* The AI-uses pill flashes once when the number changes (features/ai-usage/AiUsageBadge.tsx). */
+@keyframes ai-flash {
+  0% { box-shadow: 0 0 0 0 rgb(99 102 241 / 0.55); }
+  100% { box-shadow: 0 0 0 10px rgb(99 102 241 / 0); }
+}
+.ai-flash { animation: ai-flash 0.8s ease-out 1; }
+@media (prefers-reduced-motion: reduce) { .ai-flash { animation: none; } }
+
+/* Hero surface: deep lapis with a warm gold glow in the corner. The same in light and dark mode, so white text on it always reads. */
+.hero-surface {
+  color: #ffffff;
+  background:
+    radial-gradient(60% 80% at 88% 0%, rgb(232 194 92 / 0.1), transparent 62%),
+    linear-gradient(145deg, #1f3787 0%, #15255f 55%, #0f1a47 100%);
+  box-shadow: 0 18px 40px -18px rgb(21 37 95 / 0.55);
+}
+html.dark .hero-surface {
+  box-shadow: inset 0 0 0 1px #2b3c86, 0 18px 40px -18px rgb(0 0 0 / 0.6);
+}
+
+/* A small brand-coloured badge (the tutor's avatar): fixed lapis with a white glyph, readable in both themes. */
+.brand-chip {
+  color: #ffffff;
+  background: linear-gradient(145deg, #3a5fd0 0%, #2644a6 100%);
+}

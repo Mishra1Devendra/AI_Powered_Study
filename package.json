@@ -1,0 +1,27 @@
+{
+  "name": "ai-student-copilot",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:api dev:web",
+    "dev:api": "npm run dev -w @copilot/api",
+    "dev:web": "npm run dev -w @copilot/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "check:db": "npm run check:db -w @copilot/api",
+    "check:ai": "npm run check:ai -w @copilot/api",
+    "check:signup": "npm run check:signup -w @copilot/api"
+  },
+  "devDependencies": {
+    "npm-run-all2": "^7.0.2",
+    "typescript": "^5.7.3"
+  }
+}
