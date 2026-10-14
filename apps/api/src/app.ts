@@ -248,7 +248,10 @@ export async function buildApp({ env, db, ai, verifyToken, tutorRepo, replyDeadl
     ...(checkRepository ? { checkGate: (userId: string, sessionId: string) => checkRepository.hasPassed(userId, sessionId) } : {}),
     ai,
     // Real per-topic quiz accuracy picks the weak topics to schedule early (no extra AI call).
-    quizTopics: async (userId) => (await quizRepository.summary(userId)).topics,
+    quizTopics: async (userId) =>
+  (await quizRepository.summary(userId)).topics.filter(
+    (topic) => topic.topic !== null,
+  ),
     ...(plannerNow ? { now: plannerNow } : {}),
     onError: (err) => app.log.error(err, "study plan generation failed"),
   });
