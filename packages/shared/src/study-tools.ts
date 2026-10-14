@@ -157,13 +157,16 @@ export interface MindmapNode {
   children: MindmapNode[];
 }
 
-export const mindmapNodeSchema: z.ZodType<MindmapNode> = z.lazy(() =>
-  z.object({
-    id: z.string().min(1).max(40),
-    label: z.string().min(1).max(STUDY_TOOLS_LIMITS.labelMaxChars),
-    note: z.string().max(STUDY_TOOLS_LIMITS.noteMaxChars).optional(),
-    children: z.array(mindmapNodeSchema).max(STUDY_TOOLS_LIMITS.maxChildren),
-  }),
+export const mindmapNodeSchema: z.ZodType<MindmapNode> = z.lazy(
+  () =>
+    z.object({
+      id: z.string().min(1).max(40),
+      label: z.string().min(1).max(STUDY_TOOLS_LIMITS.labelMaxChars),
+      note: z.string().max(STUDY_TOOLS_LIMITS.noteMaxChars).optional(),
+      children: z
+        .array(mindmapNodeSchema)
+        .max(STUDY_TOOLS_LIMITS.maxChildren),
+    }) as z.ZodType<MindmapNode>,
 );
 
 export const mindmapSizeSchema = z.enum(["small", "medium", "large"]);
