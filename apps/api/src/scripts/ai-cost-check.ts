@@ -29,7 +29,9 @@ async function main() {
     process.exit(1);
   }
   if (!process.argv.includes("--live")) {
-    console.log("\nReport only. No AI request was sent. Add --live to send one local request.");
+    console.log(
+  "\nReport only. No AI request was sent. Add --live to send one request through the configured free AI chain."
+);
     return;
   }
 

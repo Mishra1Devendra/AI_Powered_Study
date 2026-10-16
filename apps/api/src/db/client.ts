@@ -35,12 +35,52 @@ export interface DbPing {
 }
 
 /** Round-trips `select 1` through Drizzle. Returns a generic error string (no driver details). */
+
+/** Round-trips `select 1` through Drizzle and logs safe diagnostic details on failure. */
+
+/** Read-only database connectivity check with nested error diagnostics. */
 export async function pingDb(db: Database): Promise<DbPing> {
   const started = performance.now();
+
   try {
     await db.execute(sql`select 1`);
-    return { ok: true, latencyMs: Math.round(performance.now() - started), error: null };
-  } catch {
-    return { ok: false, latencyMs: null, error: "Database unreachable" };
+
+    return {
+      ok: true,
+      latencyMs: Math.round(performance.now() - started),
+      error: null,
+    };
+  } catch (err: unknown) {
+    let current: unknown = err;
+    const diagnostics: Array<{
+      name?: string;
+      code?: string;
+      message?: string;
+    }> = [];
+
+    // Inspect nested errors without logging connection strings or credentials.
+    for (let depth = 0; depth < 5 && current instanceof Error; depth++) {
+      const e = current as Error & {
+        code?: string;
+        cause?: unknown;
+      };
+
+      diagnostics.push({
+        name: e.name,
+        code: e.code,
+        message: e.message.split("\n")[0],
+      });
+
+      current = e.cause;
+    }
+
+    console.error("Database diagnostic:", diagnostics);
+
+    return {
+      ok: false,
+      latencyMs: null,
+      error: "Database unreachable",
+    };
   }
 }
+
