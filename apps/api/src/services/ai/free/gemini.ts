@@ -17,11 +17,17 @@ interface GeminiChunk {
   error?: unknown;
 }
 
+export function geminiHttpError(status: number): AIError {
+  if (status === 429) return new AIError("rate_limited", "Google Gemini's free request limit was reached. Try again later.", true);
+  if (status === 401 || status === 403) return new AIError("auth", "Google Gemini is unavailable with the configured access.");
+  if (status === 400 || status === 404) return new AIError("bad_request", "Google Gemini could not handle this request.");
+  return new AIError("unavailable", "Google Gemini returned an error.", true);
+}
+
 /**
- * Google's free tier. The key goes in a request HEADER (never in the URL, so it cannot show up in a log line or an error message).
- * One call = one request; on any refusal the chain moves to the next free provider - this adapter never retries.
+ * Google Gemini API. The key goes in a request header (never in the URL); this adapter never retries or selects another provider.
  */
-export class GeminiFreeProvider implements LLMProvider {
+export class GeminiProvider implements LLMProvider {
   readonly name = "free-ai" as const;
   readonly isMock = false;
   readonly model: string;
@@ -30,7 +36,7 @@ export class GeminiFreeProvider implements LLMProvider {
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: GeminiOptions) {
-    if (!options.apiKey.trim()) throw new AIError("auth", "A free AI service is not configured.");
+    if (!options.apiKey.trim()) throw new AIError("auth", "Google Gemini is not configured.");
     this.apiKey = options.apiKey.trim();
     this.model = assertApprovedFreeModel("gemini", options.model);
     this.timeoutMs = options.timeoutMs;
@@ -57,14 +63,11 @@ export class GeminiFreeProvider implements LLMProvider {
       });
     } catch (err) {
       if (request.signal?.aborted) throw err;
-      if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) throw new AIError("timeout", "A free AI service took too long to respond.", true);
-      throw new AIError("unavailable", "A free AI service could not be reached.", true);
+      if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) throw new AIError("timeout", "Google Gemini took too long to respond.", true);
+      throw new AIError("unavailable", "Google Gemini could not be reached.", true);
     }
     if (res.ok && res.body) return res;
-    if (res.status === 429) throw new AIError("rate_limited", "A free AI service has reached its free limit.", true);
-    if (res.status === 401 || res.status === 403) throw new AIError("auth", "A free AI service is not available with the configured access.");
-    if (res.status === 400 || res.status === 404) throw new AIError("bad_request", "A free AI service could not handle this request.");
-    throw new AIError("unavailable", "A free AI service returned an error.", true);
+    throw geminiHttpError(res.status);
   }
 
   async generateText(request: GenerateTextRequest): Promise<GenerateTextResult> {
@@ -98,9 +101,9 @@ export class GeminiFreeProvider implements LLMProvider {
       try {
         chunk = JSON.parse(t.slice(5).trim()) as GeminiChunk;
       } catch {
-        throw new AIError("unknown", "A free AI service sent an unreadable response.", true);
+        throw new AIError("unknown", "Google Gemini sent an unreadable response.", true);
       }
-      if (chunk.error) throw new AIError("unavailable", "A free AI service reported an error.", true);
+      if (chunk.error) throw new AIError("unavailable", "Google Gemini reported an error.", true);
       if (chunk.usageMetadata) usage = { inputTokens: chunk.usageMetadata.promptTokenCount ?? 0, outputTokens: chunk.usageMetadata.candidatesTokenCount ?? 0 };
       const text = (chunk.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
       return text || null;
@@ -127,8 +130,8 @@ export class GeminiFreeProvider implements LLMProvider {
     } catch (err) {
       if (err instanceof AIError) throw err;
       if (request.signal?.aborted) throw err;
-      if (err instanceof Error && err.name === "TimeoutError") throw new AIError("timeout", "A free AI service took too long to respond.", true);
-      throw new AIError("unavailable", "Lost the connection to a free AI service.", true);
+      if (err instanceof Error && err.name === "TimeoutError") throw new AIError("timeout", "Google Gemini took too long to respond.", true);
+      throw new AIError("unavailable", "Lost the connection to Google Gemini.", true);
     } finally {
       reader.cancel().catch(() => undefined);
     }

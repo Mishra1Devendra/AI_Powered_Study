@@ -8,8 +8,8 @@ import { explainRecommendations } from "../../lib/recommendationsApi";
 
 /**
  * The OPTIONAL AI wording. Nothing here runs by itself: the recommendations are already complete and deterministic;
- * pressing the button makes ONE call to the local AI that rewrites the top ones in friendlier words, using only the
- * same facts. If it is not available the page says so calmly and carries on.
+ * pressing the button makes ONE call to Google Gemini that rewrites the top ones in friendlier words, using only the
+ * same facts. When AI is disabled or unavailable the page says so and carries on.
  */
 export function ExplainPanel({ onResult }: { onResult: (r: ExplainResponse | null) => void }) {
   const { client } = useAuth();
@@ -43,7 +43,9 @@ export function ExplainPanel({ onResult }: { onResult: (r: ExplainResponse | nul
           <h2 id="explain-h" className="text-base font-semibold tracking-tight text-slate-900">
             Want these in plain words?
           </h2>
-          <p className="mt-0.5 text-sm text-slate-600">Your local AI can explain the top recommendations once. It only uses the facts shown on the cards and may not be perfect.</p>
+          <p className="mt-0.5 text-sm text-slate-600">
+            When AI is enabled, Google Gemini can explain the top recommendations using the facts shown on these cards. Those facts may be sent to Google for processing. If AI is disabled or unavailable, the request returns an unavailable message and your recommendations still work.
+          </p>
         </div>
         <Button variant="secondary" onClick={() => void run()} loading={busy} className="shrink-0">
           {result?.available ? "Explain again" : "Explain my priorities"}
@@ -54,7 +56,7 @@ export function ExplainPanel({ onResult }: { onResult: (r: ExplainResponse | nul
           <Spinner className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
             <strong className="font-semibold">Writing the explanations…</strong>
-            <span className="block text-brand-800">Your local AI is working on this. It can take a minute.</span>
+            <span className="block text-brand-800">Waiting for the AI service. If it is unavailable, you will see a clear message.</span>
           </span>
         </div>
       )}
@@ -72,7 +74,7 @@ export function ExplainPanel({ onResult }: { onResult: (r: ExplainResponse | nul
         <div className="mt-4 space-y-1.5">
           {result.overview && <p className="text-sm leading-relaxed text-slate-800">{result.overview}</p>}
           <p className="text-xs text-slate-600">
-            {result.isMock ? "MOCK AI (demo) - canned text, not a real explanation." : "AI-generated, from your own facts only."} The explanations appear on the cards below.
+            {result.isMock ? "MOCK AI (demo) - canned text, not a real explanation." : "Google Gemini-generated, from your own facts only."} The explanations appear on the cards below.
           </p>
         </div>
       )}

@@ -24,15 +24,15 @@ export function Meter({ value, label }: { value: number; label: string }) {
   );
 }
 
-/** A viva written by the offline demo provider must never look like a real examiner. */
+/** Identifies Gemini-generated vivas or clearly labels retained demo records. */
 export function ProvenanceBadge({ isMock, model }: { isMock: boolean; model: string | null }) {
   return isMock ? (
     <span title="Questions and feedback are canned demo text from the offline provider, not a real AI examiner." className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-amber-900">
       MOCK AI (demo)
     </span>
   ) : (
-    <span title="Written by an AI model running on this computer. No paid service is used." className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-800 ring-1 ring-emerald-200">
-      LOCAL AI{model ? ` · ${model}` : ""}
+    <span title={model === "free-online-ai" ? "Written online by Google Gemini. Your prompt and answers may be sent to Google." : "Written by the configured AI model."} className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-800 ring-1 ring-emerald-200">
+      {model === "free-online-ai" ? "Google Gemini (online)" : `AI${model ? ` · ${model}` : ""}`}
     </span>
   );
 }

@@ -43,31 +43,33 @@ describe("zero-cost AI policy: dependencies", () => {
   });
 });
 
-describe("zero-cost AI policy: source code", () => {
-  it("references an AI API host ONLY in the approved-free catalog (which fixes the three approved free services' origins)", () => {
+describe("Gemini-only AI policy: source code", () => {
+  it("references provider API hosts only in the fixed catalog", () => {
     const hosts = /api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|aiplatform\.googleapis\.com|bedrock-runtime|openai\.azure\.com|api\.cohere\.|api\.mistral\.ai|api\.groq\.com|openrouter\.ai|api\.x\.ai|api\.deepseek\.com|api\.together\.|api\.perplexity\.ai|api\.replicate\.com|ollama\.com/i;
     const offenders = productionSource.filter((p) => hosts.test(readFileSync(p, "utf8")) && rel(p) !== "apps/api/src/services/ai/free/catalog.ts").map(rel);
     expect(offenders).toEqual([]);
   });
 
-  it("the catalog lists exactly the approved free services, with fixed https origins and no paid-host", () => {
+  it("keeps provider origins fixed and leaves Gemini unapproved while its free-tier eligibility is unverified", () => {
     const catalog = readFileSync(join(root, "apps/api/src/services/ai/free/catalog.ts"), "utf8");
     const origins = [...catalog.matchAll(/origin: "([^"]+)"/g)].map((m) => m[1]).sort();
     expect(origins).toEqual(["https://api.groq.com", "https://generativelanguage.googleapis.com", "https://openrouter.ai"]);
+    expect(catalog).toMatch(/gemini:.*models: \[\], defaultModel: null/s);
+    expect(catalog).toMatch(/eligibility.*unverified/i);
     expect(catalog).not.toMatch(/api\.openai\.com|api\.anthropic\.com|aiplatform|bedrock|azure/i);
   });
 
-  it("no free-service endpoint can be configured: env.ts has no URL/endpoint/host variable for them", () => {
+  it("no provider endpoint can be configured in the environment", () => {
     const env = readFileSync(join(root, "apps/api/src/config/env.ts"), "utf8");
     expect(env).not.toMatch(/(GROQ|GEMINI|OPENROUTER)_(BASE_URL|ENDPOINT|API_BASE|HOST|URL)/);
   });
 
-  it("the free services' names and keys never appear in the frontend (nobody can see which service answers)", () => {
+  it("the frontend contains no Gemini credential name, key, or direct provider endpoint", () => {
     const web = productionSource.filter((p) => rel(p).startsWith("apps/web/") && !rel(p).startsWith("apps/web/src/dev/"));
-    const offenders = web.filter((p) => /groq|gemini|openrouter|GROQ_|GEMINI_/i.test(readFileSync(p, "utf8"))).map(rel);
+    const offenders = web.filter((p) => /GEMINI_API_KEY|AIza[0-9A-Za-z_-]{20,}|generativelanguage\.googleapis\.com/i.test(readFileSync(p, "utf8"))).map(rel);
     expect(offenders).toEqual([]);
     const shared = productionSource.filter((p) => rel(p).startsWith("packages/shared/"));
-    expect(shared.filter((p) => /groq|gemini|openrouter/i.test(readFileSync(p, "utf8"))).map(rel)).toEqual([]);
+    expect(shared.filter((p) => /GEMINI_API_KEY|AIza[0-9A-Za-z_-]{20,}|generativelanguage\.googleapis\.com/i.test(readFileSync(p, "utf8"))).map(rel)).toEqual([]);
   });
 
   it("no real API key is committed anywhere (source, docs, examples)", () => {
@@ -83,11 +85,31 @@ describe("zero-cost AI policy: source code", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("the provider list contains only ollama, mock and the opaque free-ai chain", () => {
-    const types = readFileSync(join(root, "apps/api/src/services/ai/types.ts"), "utf8");
-    expect(types).toMatch(/export type ProviderName = "ollama" \| "mock" \| "free-ai";/);
+  it("the active provider factory can only construct Gemini and has no local or alternate-provider fallback", () => {
+    const factory = readFileSync(join(root, "apps/api/src/services/ai/index.ts"), "utf8");
+    expect(factory).toMatch(/new GeminiProvider/);
+    expect(factory).not.toMatch(/import\s+\{[^}]*\b(?:OllamaProvider|MockProvider|FreeAiChainProvider|ChatCompletionsProvider)\b|new\s+(?:OllamaProvider|MockProvider|FreeAiChainProvider|ChatCompletionsProvider|buildFreeSlots)\b/);
     const env = readFileSync(join(root, "apps/api/src/config/env.ts"), "utf8");
-    expect(env).toMatch(/z\s*\.enum\(\["ollama", "mock", "free"\]/);
+    expect(env).toMatch(/env\.AI_ENABLED && env\.AI_PROVIDER !== "gemini"/);
+    expect(env).not.toMatch(/OLLAMA_|FREE_AI_ORDER|GROQ_API_KEY|OPENROUTER_API_KEY/);
+  });
+
+  it("no production module imports the retained local or alternate-provider adapters", () => {
+    const legacy = new Set([
+      "apps/api/src/services/ai/mock-fallback.ts",
+      "apps/api/src/services/ai/mock-provider.ts",
+      "apps/api/src/services/ai/ollama-provider.ts",
+      "apps/api/src/services/ai/free/chain.ts",
+      "apps/api/src/services/ai/free/chat-completions.ts",
+    ]);
+    const importsLegacy = /from\s+["'][^"']*(?:mock-fallback|mock-provider|ollama-provider|free\/chain|free\/chat-completions)\.js["']/;
+    const offenders = productionSource.filter((p) => !legacy.has(rel(p)) && importsLegacy.test(readFileSync(p, "utf8"))).map(rel);
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps historical provider identifiers only for stored data compatibility", () => {
+    const types = readFileSync(join(root, "apps/api/src/services/ai/types.ts"), "utf8");
+    expect(types).toMatch(/export type ProviderName = "ollama" \| "mock" \| "free-ai" \| "disabled";/);
   });
 
   it("AI is only ever called for something a student asked for (no startup, scheduled or polling AI calls)", () => {
@@ -98,13 +120,13 @@ describe("zero-cost AI policy: source code", () => {
       "apps/api/src/viva/ai.ts", // the fourth call site: ONE question or ONE evaluation per student action in a viva (a single retry only for an unreadable reply; never scheduled, polled or started by the server)
       "apps/api/src/recommendations/explain.ts", // the fifth call site: ONE optional call when the student presses "Explain my priorities" (never on page load, scheduled, polled or retried; the recommendations themselves are deterministic)
       "apps/api/src/study-tools/generate.ts", // the sixth call site: ONE call per flashcard deck or mind map the student explicitly asked for (no retries, never scheduled or polled; capped per student per day)
-      "apps/api/src/scripts/ai-cost-check.ts", // explicit, local-only, opt-in --live
-      "apps/api/src/services/ai/mock-fallback.ts", // provider plumbing
+      "apps/api/src/scripts/ai-cost-check.ts", // explicit report-only cost check; any live mode is never used by tests
+      "apps/api/src/services/ai/mock-fallback.ts", // retained legacy provider plumbing; not imported by the active factory
       "apps/api/src/services/ai/mock-provider.ts",
       "apps/api/src/services/ai/ollama-provider.ts",
-      "apps/api/src/services/ai/free/chain.ts", // provider plumbing: the free-AI provider manager (local, then approved FREE services, never paid)
-      "apps/api/src/services/ai/free/chat-completions.ts", // provider plumbing: one approved free service adapter
-      "apps/api/src/services/ai/free/gemini.ts", // provider plumbing: one approved free service adapter
+      "apps/api/src/services/ai/free/chain.ts",
+      "apps/api/src/services/ai/free/chat-completions.ts",
+      "apps/api/src/services/ai/free/gemini.ts", // sole provider adapter
       "apps/api/src/services/ai/telemetry.ts", // provider plumbing: a transparent wrapper that only forwards (and times) calls the app above already made
     ]);
     const calls = /\.(streamText|generateText)\(/;
@@ -132,6 +154,6 @@ describe("zero-cost AI policy: source code", () => {
     for (const m of example.matchAll(/^\s*#?\s*(GROQ|GEMINI|OPENROUTER)_(API_KEY|MODEL)\s*=(.*)$/gim)) {
       if (m[2] === "API_KEY") expect(m[3]!.trim(), `${m[1]}_API_KEY must be empty in the example`).toBe("");
     }
-    expect(example).toMatch(/^AI_PROVIDER=ollama/m);
+    expect(example).toMatch(/^AI_PROVIDER=gemini/m);
   });
 });

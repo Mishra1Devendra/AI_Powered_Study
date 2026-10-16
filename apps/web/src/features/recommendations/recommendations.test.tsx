@@ -170,6 +170,9 @@ describe("the optional AI explanation", () => {
     backend.knobs.delayMs = 120;
     const { user } = renderAt();
     await screen.findByRole("heading", { name: "Recommended Now" });
+    expect(screen.getByText(/When AI is enabled, Google Gemini/)).toBeInTheDocument();
+    expect(screen.getByText(/Those facts may be sent to Google for processing/)).toBeInTheDocument();
+    expect(screen.getByText(/If AI is disabled or unavailable/)).toBeInTheDocument();
     expect(backend.calls.filter((c) => c.method === "POST")).toHaveLength(0);
     const button = screen.getByRole("button", { name: "Explain my priorities" });
     await Promise.all([user.click(button), user.click(button), user.click(button)]);
@@ -178,7 +181,7 @@ describe("the optional AI explanation", () => {
     expect(backend.calls.filter((c) => c.method === "POST")).toHaveLength(1);
     expect(card("Revise Photosynthesis now").getByText("This matters now, so start here.")).toBeInTheDocument();
     expect(card("Revise Photosynthesis now").getByText("In plain words (AI)")).toBeInTheDocument();
-    expect(screen.getByText(/AI-generated, from your own facts only/)).toBeInTheDocument();
+    expect(screen.getByText(/Google Gemini-generated, from your own facts only/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Explain again" })).toBeInTheDocument();
   });
 

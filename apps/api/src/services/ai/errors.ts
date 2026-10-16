@@ -4,7 +4,6 @@ export type AIErrorCode =
   | "auth"
   | "bad_request"
   | "unavailable"
-  /** Ollama is not reachable on this machine (not installed / not running). Triggers the MOCK fallback, never a paid one. */
   | "local_unavailable"
   | "empty_response"
   | "refused"
@@ -19,5 +18,12 @@ export class AIError extends Error {
   ) {
     super(message);
     this.name = "AIError";
+  }
+}
+
+export class PolicyViolation extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PolicyViolation";
   }
 }

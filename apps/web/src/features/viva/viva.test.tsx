@@ -152,7 +152,7 @@ describe("setup", () => {
   it("labels an offline-demo examiner as MOCK AI (demo)", async () => {
     useBackend({ mock: true });
     const { user } = renderAt();
-    expect(await screen.findByText(/canned demo questions and feedback/)).toBeInTheDocument();
+    expect(await screen.findByText(/your viva topic and answers may be sent to Google Gemini/i)).toBeInTheDocument();
     await user.type(screen.getByLabelText("Subject"), "Chemistry");
     await user.click(screen.getByRole("button", { name: "Start Viva" }));
     await screen.findByText("Question 1 of 5", {}, { timeout: 3000 });

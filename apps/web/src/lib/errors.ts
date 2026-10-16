@@ -12,6 +12,7 @@ export function friendlyMessage(err: unknown, fallback: string = GENERIC_LOAD_ME
   if (err instanceof ApiError) {
     if (err.status === 0) return NETWORK_MESSAGE;
     if (err.status === 401) return "Your session has expired. Please sign in again.";
+    if (err.status === 503 && err.body?.error === "unavailable") return err.message;
     if (err.status >= 500) return fallback;
     return err.message || fallback;
   }

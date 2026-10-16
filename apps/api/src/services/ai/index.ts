@@ -1,64 +1,62 @@
 import type { Env } from "../../config/env.js";
-import { OllamaOrMockProvider } from "./mock-fallback.js";
-import { MockProvider } from "./mock-provider.js";
-import { DEFAULT_FREE_ORDER, FREE_PROVIDERS, isFreeProviderId, type FreeProviderId } from "./free/catalog.js";
-import { FreeAiChainProvider, type FreeSlot } from "./free/chain.js";
-import { ChatCompletionsProvider } from "./free/chat-completions.js";
-import { GeminiFreeProvider } from "./free/gemini.js";
-import { OllamaProvider, PolicyViolation } from "./ollama-provider.js";
+import { GeminiProvider } from "./free/gemini.js";
+import { AIError, PolicyViolation } from "./errors.js";
 import type { LLMProvider } from "./types.js";
+import type { AiStatusReport } from "@copilot/shared";
 
-type ProviderEnv = Pick<Env, "AI_PROVIDER" | "OLLAMA_BASE_URL" | "OLLAMA_MODEL" | "OLLAMA_NUM_CTX" | "AI_TIMEOUT_MS"> &
-  Partial<Pick<Env, "FREE_AI_ORDER" | "FREE_AI_LOCAL_POSITION" | "GROQ_API_KEY" | "GROQ_MODEL" | "GEMINI_API_KEY" | "GEMINI_MODEL" | "OPENROUTER_API_KEY" | "OPENROUTER_MODEL">>;
+type ProviderEnv = Pick<Env, "AI_PROVIDER" | "AI_TIMEOUT_MS"> & Partial<Pick<Env, "GEMINI_API_KEY" | "GEMINI_MODEL" | "GEMINI_BILLING_DISABLED">>;
 
-/** The configured free online services, in order. A service without a key is simply not used. Invalid names/models fail at startup. */
-export function buildFreeSlots(env: ProviderEnv, fetchImpl?: typeof fetch): FreeSlot[] {
-  const order = (env.FREE_AI_ORDER ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  const ids: FreeProviderId[] = order.length ? order.map((n) => (isFreeProviderId(n) ? n : fail(n))) : [...DEFAULT_FREE_ORDER];
-  const seen = new Set<FreeProviderId>();
-  const slots: FreeSlot[] = [];
-  for (const id of ids) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    const key = id === "groq" ? env.GROQ_API_KEY : id === "gemini" ? env.GEMINI_API_KEY : env.OPENROUTER_API_KEY;
-    if (!key) continue;
-    const model = (id === "groq" ? env.GROQ_MODEL : id === "gemini" ? env.GEMINI_MODEL : env.OPENROUTER_MODEL) || FREE_PROVIDERS[id].defaultModel;
-    if (!model) throw new PolicyViolation("OPENROUTER_MODEL must be set to an explicit \":free\" model id before OpenRouter can be used.");
-    const common = { apiKey: key, model, timeoutMs: env.AI_TIMEOUT_MS, ...(fetchImpl ? { fetchImpl } : {}) };
-    slots.push({ label: id, service: FREE_PROVIDERS[id].displayName, model, limits: FREE_PROVIDERS[id].limits, provider: id === "gemini" ? new GeminiFreeProvider(common) : new ChatCompletionsProvider({ ...common, id }) });
-  }
-  return slots;
+/** Creates the sole enabled provider. Missing credentials or an unapproved model fail before serving requests. */
+export function createLLMProvider(env: ProviderEnv, fetchImpl?: typeof fetch): LLMProvider {
+  if (env.AI_PROVIDER !== "gemini") throw new PolicyViolation("Only Google Gemini is enabled; no provider fallback is configured.");
+  if (!env.GEMINI_API_KEY) throw new PolicyViolation("GEMINI_API_KEY is required to start the Gemini provider.");
+  if (env.GEMINI_BILLING_DISABLED !== true) throw new PolicyViolation("Google project billing must be confirmed disabled before starting Gemini.");
+  if (!env.GEMINI_MODEL) throw new PolicyViolation("GEMINI_MODEL must be explicitly configured and verified as free before AI can start.");
+  return new GeminiProvider({
+    apiKey: env.GEMINI_API_KEY,
+    model: env.GEMINI_MODEL,
+    timeoutMs: env.AI_TIMEOUT_MS,
+    ...(fetchImpl ? { fetchImpl } : {}),
+  });
 }
 
-function fail(name: string): never {
-  throw new PolicyViolation(`"${name.slice(0, 30)}" is not an approved free AI service. Approved: ${Object.keys(FREE_PROVIDERS).join(", ")}.`);
-}
-
-/**
- * Zero-cost providers only. `AI_PROVIDER=ollama` (default): local Ollama, falling back to the
- * labelled mock if Ollama is not running. `AI_PROVIDER=mock`: mock only. There is deliberately
- * no paid provider and no provider chain: see docs/AI_POLICY.md.
- * Throws PolicyViolation if the Ollama URL/model is not provably local.
- */
-export function createLLMProvider(env: ProviderEnv): LLMProvider {
-  if (env.AI_PROVIDER === "mock") return new MockProvider();
-  if (env.AI_PROVIDER === "free") {
-    const local = new OllamaProvider({ baseUrl: env.OLLAMA_BASE_URL, model: env.OLLAMA_MODEL, timeoutMs: env.AI_TIMEOUT_MS, numCtx: env.OLLAMA_NUM_CTX });
-    return new FreeAiChainProvider({ local, slots: buildFreeSlots(env), localPosition: env.FREE_AI_LOCAL_POSITION ?? "first" });
-  }
-  return new OllamaOrMockProvider(
-    new OllamaProvider({
-      baseUrl: env.OLLAMA_BASE_URL,
-      model: env.OLLAMA_MODEL,
-      timeoutMs: env.AI_TIMEOUT_MS,
-      numCtx: env.OLLAMA_NUM_CTX,
-    }),
-  );
+export function createDisabledLLMProvider(): LLMProvider {
+  const unavailable = () => new AIError("unavailable", "AI is disabled for this deployment. No AI provider was contacted.");
+  const countersSince = new Date().toISOString();
+  const status: AiStatusReport = {
+    mode: "disabled",
+    localPosition: null,
+    lastAnswered: null,
+    countersSince,
+    steps: [{
+      order: 1,
+      service: "AI disabled",
+      model: "none",
+      where: "disabled",
+      state: "not_running",
+      restingSeconds: 0,
+      usedToday: 0,
+      limitPerMinute: null,
+      limitPerDay: null,
+      limitNote: "AI is disabled for this deployment. No prompts or study content are sent to an AI provider.",
+      lastResult: null,
+      lastAt: null,
+    }],
+  };
+  return {
+    name: "disabled",
+    model: "disabled",
+    isMock: false,
+    generateText: async () => {
+      throw unavailable();
+    },
+    async *streamText() {
+      throw unavailable();
+    },
+    status: async () => status,
+  };
 }
 
 export { AIError } from "./errors.js";
-export { PolicyViolation } from "./ollama-provider.js";
+export { PolicyViolation } from "./errors.js";
 export type { LLMProvider, GenerateTextRequest, GenerateTextResult, TextStream } from "./types.js";

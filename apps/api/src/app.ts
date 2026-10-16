@@ -148,7 +148,7 @@ export async function buildApp({ env, db, ai, verifyToken, tutorRepo, replyDeadl
   app.decorateRequest("role", null);
   // The daily AI allowance: every route that asks the AI for something is guarded (app.aiQuota.guard), administrators are never limited.
   const usageRepo = aiUsageRepo ?? (env.NODE_ENV === "test" ? undefined : createAiUsageRepository(db));
-  installAiQuota(app, usageRepo ? createAiQuota({ repo: usageRepo, dailyUnits: env.AI_DAILY_UNITS, ...(aiQuotaNow ? { now: aiQuotaNow } : {}) }) : undefined);
+  installAiQuota(app, usageRepo ? createAiQuota({ repo: usageRepo, dailyUnits: env.AI_DAILY_UNITS, ...(aiQuotaNow ? { now: aiQuotaNow } : {}) }) : undefined, ai.name !== "disabled");
 
   app.setErrorHandler((err: FastifyError, req, reply) => {
     if (err instanceof ZodError) {
@@ -161,7 +161,8 @@ export async function buildApp({ env, db, ai, verifyToken, tutorRepo, replyDeadl
       return reply.status(err.status).send({ error: err.code, message: err.message, ...(err.extra ?? {}) });
     }
     if (err instanceof AIError) {
-      return reply.status(err.code === "rate_limited" ? 429 : 502).send({ error: err.code, message: err.message });
+      const status = err.code === "rate_limited" ? 429 : err.code === "unavailable" ? 503 : 502;
+      return reply.status(status).send({ error: err.code, message: err.message });
     }
     const status = err.statusCode && err.statusCode >= 400 && err.statusCode < 500 ? err.statusCode : 500;
     if (status === 500) req.log.error(err);
@@ -248,18 +249,7 @@ export async function buildApp({ env, db, ai, verifyToken, tutorRepo, replyDeadl
     ...(checkRepository ? { checkGate: (userId: string, sessionId: string) => checkRepository.hasPassed(userId, sessionId) } : {}),
     ai,
     // Real per-topic quiz accuracy picks the weak topics to schedule early (no extra AI call).
-quizTopics: async (userId) =>
-  (await quizRepository.summary(userId)).topics
-    .filter(
-      (topic): topic is typeof topic & { topic: string } =>
-        typeof topic.topic === "string",
-    )
-    .map((topic) => ({
-      topic: topic.topic,
-      correct: topic.correct,
-      total: topic.total,
-      percentage: topic.percentage,
-    })),
+    quizTopics: async (userId) => (await quizRepository.summary(userId)).topics,
     ...(plannerNow ? { now: plannerNow } : {}),
     onError: (err) => app.log.error(err, "study plan generation failed"),
   });

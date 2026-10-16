@@ -19,15 +19,15 @@ export function QuizStatusBadge({ status }: { status: QuizStatus }) {
   );
 }
 
-/** LOCAL AI vs MOCK AI: a quiz made by the demo provider must never look like a real one. */
+/** Identifies Gemini-generated quizzes or clearly labels retained demo records. */
 export function QuizProvenance({ isMock, model }: { isMock: boolean; model: string | null }) {
   return isMock ? (
     <span title="These questions are canned demo text, not written by a real AI model." className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-amber-900">
       MOCK AI
     </span>
   ) : (
-    <span title="Written by an AI model running on this computer. No paid service is used." className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-800 ring-1 ring-emerald-200">
-      LOCAL AI{model ? ` · ${model}` : ""}
+    <span title={model === "free-online-ai" ? "Written online by Google Gemini. Your prompt and relevant study content may be sent to Google." : "Written by the configured AI model."} className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-800 ring-1 ring-emerald-200">
+      {model === "free-online-ai" ? "Google Gemini (online)" : `AI${model ? ` · ${model}` : ""}`}
     </span>
   );
 }

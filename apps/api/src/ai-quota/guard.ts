@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest, preHandlerAsyncHookHandler } from "fastify";
 import type { AiFeature, AiUsage, Role } from "@copilot/shared";
 import type { AiCharge, AiQuota } from "./service.js";
+import { AIError } from "../services/ai/errors.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -26,7 +27,7 @@ const NEVER_RESETS = new Date(Date.UTC(2100, 0, 1)).toISOString();
  * Installs the daily AI allowance on the app: `app.aiQuota.guard("quiz")` on each AI route. Without a quota (tests that do not
  * inject one) every guard does nothing. A request that ends with an error status gives its charge back.
  */
-export function installAiQuota(app: FastifyInstance, quota: AiQuota | undefined): void {
+export function installAiQuota(app: FastifyInstance, quota: AiQuota | undefined, aiEnabled = true): void {
   app.decorateRequest("aiCharge", null);
 
   const refund = async (req: FastifyRequest) => {
@@ -43,6 +44,7 @@ export function installAiQuota(app: FastifyInstance, quota: AiQuota | undefined)
   const guard: AiQuotaGuard = {
     guard(feature) {
       return async (req) => {
+        if (!aiEnabled) throw new AIError("unavailable", "AI is disabled for this deployment. No AI provider was contacted.");
         if (!quota || !req.user) return;
         req.aiCharge = await quota.charge(req.user.id, req.role, feature);
       };

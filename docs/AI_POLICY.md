@@ -1,50 +1,37 @@
-# Zero-cost AI policy (permanent until the owner revokes it in writing)
+# AI provider and privacy policy
 
-AI Student Copilot must never use a paid AI service, API, model, token usage, subscription or credit.
-AI cost target: **INR 0 / USD 0**. Paid AI is allowed only after the owner writes an explicit authorization
-such as "I authorize paid Gemini usage". Phrases like "try it", "test it", "continue" or "use the best model"
-are NOT authorization. When in doubt: stop, make no request, ask.
+## Required policy
 
-## What the code does about it
+- Google Gemini is the only intended online AI provider. The active API factory does not select Ollama, a local model, a mock fallback, Groq, OpenRouter, or a paid provider.
+- There is no automatic provider switching. A Gemini quota, network, or provider error is returned to the user as an error.
+- AI credentials are backend-only and must never be put in frontend variables, logs, API responses, documentation, or source control.
+- The application is for adults (18+) and professional/business use only. Do not offer Gemini-powered features to under-18 users.
 
-| Rule | Implementation |
-|---|---|
-| Default AI is Ollama on this device | `AI_PROVIDER=ollama`, `apps/api/src/services/ai/ollama-provider.ts` (plain local HTTP, no SDK) |
-| Ollama down -> MOCK, never paid | `mock-fallback.ts`: its only target is the labelled mock; only when Ollama is unreachable before any output |
-| Other failures are errors, not fake answers | timeouts, missing model, mid-reply loss are reported to the student |
-| Paid providers cannot be selected | `AI_PROVIDER` accepts only `ollama` or `mock`; anything else fails at startup with an approval message |
-| Ollama must be local | `OLLAMA_BASE_URL` must be loopback; Ollama **cloud** models (`...-cloud`) are refused |
-| Paid keys are never used | no code reads them; they are only *detected* by name for reporting (`cost-safety.ts`) |
-| Paid SDKs cannot sneak in | `policy.guard.test.ts` fails on any paid AI SDK, paid AI host, paid-key read, or AI call outside the allow-listed call sites (listed, each with its reason, in the test: tutor, quiz, planner, viva, recommendations, and flashcards / mind maps in `study-tools/generate.ts`) |
-| No background AI | AI is called only because a student asked: a tutor/notes message, or "Generate quiz". A quiz finishes after the HTTP response (it takes minutes on a local model) but is never started by a timer, job, poll, startup or page refresh, makes at most a few bounded calls, and the provider never retries automatically |
-| Safety check | `npm run check:ai` prints the cost report and sends nothing; `-- --live` sends ONE request, only to local Ollama or the mock |
-| Fail safe at startup | the API refuses to start unless the AI configuration is `SAFE` |
+## Current availability: explicitly disabled by default
 
-## Using local AI (Ollama)
+`AI_ENABLED` defaults to `false`. In that mode, the API starts without an AI provider, no prompts or study content are sent externally, and generative AI routes return a clear `503 unavailable` response. The admin and health status screens report that AI is disabled. This allows the non-AI application to run without suggesting AI works.
 
-Ollama is **not installed by this project**. To use real local AI you install it yourself (it is free; no account,
-no key): https://ollama.com/download, then pull a small model, for example `ollama pull llama3.2:3b`.
-Until then, replies are clearly-labelled demo (mock) replies. Everything runs on your own device and uses its CPU/RAM.
+The current candidate model is `gemini-2.5-flash-lite`. Google's model guide lists that model, but the official pricing information inspected did not conclusively associate it with the current free tier. Its free-tier eligibility is therefore **unverified**. No Gemini model is currently approved in `services/ai/free/catalog.ts`. Do not set `AI_ENABLED=true` or claim Gemini is confirmed free until the exact model's eligibility is verified against current official documentation. If enabled without passing all verification checks, API startup still fails closed.
 
-## Zero-cost audit (run at the start and end of every phase)
+Google's pricing page says free-tier access is limited to certain models; it does not justify assuming that every listed model has free access. Even after a model is verified, `GEMINI_BILLING_DISABLED=true` is only an operator attestation. The application cannot inspect Google Cloud billing state. Keep billing disabled for the Google project; the app has no paid-provider fallback.
 
-`npm run check:ai` for the provider report, plus `npm test` (includes `policy.guard.test.ts`). Report format:
+## Data sent for AI processing
 
-```
-AI Cost Status
-Provider / Model / Local-or-Cloud / Paid-or-Free / Billing enabled
-Paid API key present / Paid API requests made / Potential charges
-Result: SAFE | BLOCKED | NEEDS_APPROVAL
-```
+When AI is enabled, user prompts and relevant study content (which can include note passages, quiz or viva details, planner data, and answers) may be transmitted to Google Gemini for processing. Google states in the Gemini API pricing/terms for unpaid service that submitted prompts and responses may be used to improve its products; Google's terms also allow human review in applicable circumstances. The app does not claim that Google never stores or uses submitted content. Users should not submit sensitive personal information.
 
-## What local inspection can and cannot prove
+This disclosure is shown in Settings and on the sign-in/sign-up experience. User-data isolation in this application does not prevent content in an AI request from being sent to Google.
 
-The project can show its **configuration and code paths**: which provider is selected, that no paid SDK or host
-exists, and that no paid key is read. It **cannot** prove what an external provider's billing records say. "The
-application never called a paid provider" is not the same statement as "the provider billed INR 0". See rules 14 and 15
-in the policy; never claim INR 0 without provider-side evidence.
+## Configuration and checks
 
-## Database safety still applies
+- `.env.example` contains variable names only and no credentials. Set `GEMINI_API_KEY` only in the backend's secret store.
+- `AI_ENABLED` accepts only `true` or `false` and defaults to `false`. When disabled, provider settings are ignored and no provider is constructed. When enabled, `AI_PROVIDER` must be `gemini`; a missing key, missing model, unapproved model, or unconfirmed billing-disabled attestation blocks startup.
+- `npm run check:ai` is a report-only check and makes no AI request. Do not use its opt-in live mode for policy verification.
+- Tests must use mocked responses only. Never print keys, inspect `.env` contents, or make a live request to verify model/quota behavior.
 
-This policy does not override database safety: no DROP, TRUNCATE, reset, deleting users/conversations/messages,
-disabling RLS, or replacing Supabase without explicit approval.
+## Official sources checked
+
+- [Gemini API model guide](https://ai.google.dev/gemini-api/docs/models)
+- [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)
+- [Gemini API terms](https://ai.google.dev/gemini-api/terms)
+
+Re-check these sources before approving a model or changing this policy. The model guide establishes model availability, not free-tier eligibility.

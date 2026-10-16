@@ -37,7 +37,7 @@ function Step({ s }: { s: AiStepStatus }) {
           {st.label}
           {s.state === "resting" && s.restingSeconds > 0 ? ` · ${s.restingSeconds}s` : ""}
         </span>
-        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700">{s.where === "online" ? "Online" : "This computer"}</span>
+        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700">{s.where === "online" ? "Online" : s.where === "disabled" ? "Disabled" : "This computer"}</span>
       </div>
       <dl className="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
         <dt className="text-slate-600">Model</dt>
@@ -56,7 +56,7 @@ function Step({ s }: { s: AiStepStatus }) {
   );
 }
 
-/** Administrators only: which AI is answering, in what order, and each service's free limit. Reading this screen makes no AI request. */
+/** Administrators only: the configured Gemini service status. Reading this screen makes no AI request. */
 export default function AdminAiStatusPage() {
   return (
     <AdminOnly>
@@ -88,7 +88,7 @@ function Status() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">AI status</h1>
-          <p className="mt-1 text-sm text-slate-600">Which AI answers, in what order, and each one&apos;s free limit. Only administrators can see this. Students see only &ldquo;Free AI&rdquo;.</p>
+          <p className="mt-1 text-sm text-slate-600">Google Gemini is the only permitted provider when AI is enabled. No alternate provider is tried. Only administrators can see this screen.</p>
         </div>
         <Button variant="secondary" onClick={() => void load()}>
           Refresh
@@ -107,8 +107,10 @@ function Status() {
       ) : (
         <>
           <Card className="mt-6">
-            <h2 className="text-base font-semibold">Working now</h2>
-            {data.lastAnswered ? (
+            <h2 className="text-base font-semibold">Provider status</h2>
+            {data.mode === "disabled" ? (
+              <p className="mt-2 text-sm text-slate-600">AI is disabled for this deployment. No provider was configured or contacted.</p>
+            ) : data.lastAnswered ? (
               <p className="mt-2 text-sm text-slate-800">
                 The last answer came from <span className="font-semibold text-slate-900">{data.lastAnswered.service}</span> (<span className="break-all">{data.lastAnswered.model}</span>) at {when(data.lastAnswered.at)}.
               </p>
@@ -116,25 +118,25 @@ function Status() {
               <p className="mt-2 text-sm text-slate-600">No question has been answered since the server started. Ask something in the Tutor, then refresh.</p>
             )}
             <p className="mt-2 text-xs text-slate-600">
-              {data.mode === "free"
-                ? data.localPosition === "last"
-                  ? "Order: free online services first, the local AI only when they cannot answer."
-                  : "Order: the local AI first, free online services as the backup."
+              {data.mode === "disabled"
+                ? "AI is disabled for this deployment. No prompts or study content are sent to an AI provider."
+                : data.mode === "free"
+                ? "Google Gemini only. There is no local model or provider fallback."
                 : data.mode === "mock"
                   ? "Demo mode: canned replies only."
-                  : "Local AI only (no free online service is configured)."}{" "}
+                  : "No AI provider is configured."}{" "}
               Counts start from {when(data.countersSince)} and reset when the server restarts.
             </p>
           </Card>
 
           <Card className="mt-4">
-            <h2 className="text-base font-semibold">Order tried for each question</h2>
-            <ol aria-label="AI services in the order they are tried" className="mt-1 divide-y divide-slate-100">
+            <h2 className="text-base font-semibold">Configured AI service</h2>
+            <ol aria-label="Configured AI service" className="mt-1 divide-y divide-slate-100">
               {data.steps.map((s) => (
                 <Step key={`${s.order}-${s.service}`} s={s} />
               ))}
             </ol>
-            <p className="mt-2 text-xs text-slate-600">If every service is unavailable, students see &ldquo;All free AI services are currently unavailable. Please try again later.&rdquo; Nothing paid is ever used.</p>
+            <p className="mt-2 text-xs text-slate-600">When enabled, if Google Gemini is unavailable or its quota is exhausted, the request fails with a clear error. No other provider is tried.</p>
           </Card>
         </>
       )}

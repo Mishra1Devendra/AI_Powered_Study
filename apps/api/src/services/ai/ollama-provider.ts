@@ -1,4 +1,4 @@
-import { AIError } from "./errors.js";
+import { AIError, PolicyViolation } from "./errors.js";
 import type { AiProbe, GenerateTextRequest, GenerateTextResult, LLMProvider, TextStream } from "./types.js";
 
 /**
@@ -12,12 +12,7 @@ import type { AiProbe, GenerateTextRequest, GenerateTextResult, LLMProvider, Tex
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 const CLOUD_MODEL = /(^|[-:/_.])cloud($|[-:/_.])/i;
 
-export class PolicyViolation extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "PolicyViolation";
-  }
-}
+export { PolicyViolation } from "./errors.js";
 
 /** Throws unless `url` is a plain http(s) loopback address. Returns the normalised base URL. */
 export function assertLocalOllamaUrl(url: string): string {

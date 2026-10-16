@@ -1,9 +1,9 @@
 # AI Quiz (Phase 5)
 
 Students create a quiz from their own notes or from a subject/topic, take it, and get a score computed
-by the server, explanations, topic-by-topic accuracy and a mistake review. Questions are written by
-the **local** AI (Ollama) or, if it is not running, by the clearly-labelled **MOCK** provider. Never a
-paid provider.
+by the server, explanations, topic-by-topic accuracy and a mistake review. The active API is configured for Google Gemini only;
+the current candidate model's free-tier eligibility is unverified, so API startup is blocked. When enabled, quiz prompts and
+relevant note passages may be sent to Google. There is no local-model or alternate-provider fallback; see `AI_POLICY.md`.
 
 ## Flow
 
@@ -11,7 +11,7 @@ paid provider.
 Create (UI) ──▶ POST /api/quiz/generate ──▶ 202 { status: "generating" }  ──▶ UI polls GET /api/quiz/:id
                     │
                     └─ background job (one per student, 40 min hard deadline):
-                         pick passages from the notes (Phase 4 chunks, full-text search) ─▶ prompt ─▶ Ollama (JSON mode)
+                         pick passages from the notes (Phase 4 chunks, full-text search) ─▶ prompt ─▶ Gemini (JSON mode, when enabled)
                          ─▶ validate EVERY question ─▶ top up if some were rejected ─▶ store all, or store nothing
 Take  ──▶ POST /:id/start ─▶ PUT /attempts/:id/answers (autosave) ─▶ POST /attempts/:id/submit ─▶ result
 ```
@@ -94,8 +94,7 @@ verified quote is stored in `quiz_questions.source_ref` (existing JSON column; n
 browser during a quiz, and is shown on the result next to the page and section.
 
 Subject/topic quizzes have no notes to check against, so they get the structural, duplicate, wording, option and
-explanation checks but not the grounding checks. The offline MOCK provider is exempt from grounding (its text is
-placeholder), but not from the other checks.
+explanation checks but not the grounding checks. Tests use scripted responses; the active runtime has no mock fallback.
 
 **Bounded effort**: one model call per 5 questions plus at most 2 replacement calls; generation stops early after 2 calls
 in a row that produce nothing usable. If fewer acceptable questions than requested exist, the quiz is **not saved**, and
@@ -132,11 +131,10 @@ quiz; question order per attempt; score/percentage/time), `quiz_answers` (one pe
 `is_correct` set at grading). Composite `(id, user_id)` foreign keys make cross-student or cross-quiz
 links impossible. Topics are stored as text on the question (there is no `subjects`/`topics` table yet).
 
-## Running locally (zero cost)
+## Running locally
 
-Same as Notes: `AI_PROVIDER=ollama`, Ollama on `127.0.0.1`. On a CPU a 5-question quiz takes roughly
-1-5 minutes (measured: 75-285 s per call, depending on free RAM) and the UI says so. Without Ollama the
-MOCK provider produces placeholder questions marked `[Demo]`, labelled **MOCK AI** everywhere.
+The API currently refuses to start until the candidate Gemini model's free-tier eligibility is verified. If Gemini is later enabled,
+quota or provider errors fail clearly and are not replaced with local or demo output.
 
 Preview without any backend: `/dev/quiz` (fixtures only; stripped from production builds, checked by
 `npm run verify:bundle -w @copilot/web`).

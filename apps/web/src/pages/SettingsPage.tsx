@@ -50,20 +50,17 @@ function AiStatus() {
         <dl className="mt-3 space-y-2 text-sm">
           <div className="flex justify-between gap-4">
             <dt className="text-slate-600">AI helper</dt>
-            <dd className="text-right font-medium text-slate-900">{health.ai.isMock ? "Demo AI (mock)" : health.ai.provider === "free-ai" ? "Free AI · this computer first" : `Local AI · ${health.ai.model}`}</dd>
+            <dd className="text-right font-medium text-slate-900">{health.ai.provider === "disabled" ? "AI disabled" : health.ai.isMock ? "Demo AI (mock)" : health.ai.provider === "free-ai" ? "Google Gemini · online" : `AI · ${health.ai.model}`}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-slate-600">Where it runs</dt>
-            <dd className="text-right font-medium text-slate-900">{health.ai.isMock ? "Built into the app" : health.ai.provider === "free-ai" ? "On this computer, or a free online service" : "On this computer"}</dd>
+            <dd className="text-right font-medium text-slate-900">{health.ai.provider === "disabled" ? "Disabled; no external AI requests" : health.ai.isMock ? "Built into the app" : "Google Gemini (online)"}</dd>
           </div>
         </dl>
       )}
+      {health && health !== "error" && health.ai.isMock && <p className="mt-3 text-sm text-slate-600">This environment is using canned demo text, labelled as demo.</p>}
       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        {health && health !== "error" && health.ai.isMock
-          ? "The local AI isn't running, so answers are canned demo text and are labelled that way. Start your local AI for real answers."
-          : health && health !== "error" && health.ai.provider === "free-ai"
-            ? "Answers are written by an AI model on this computer when it is running. If it is not, your question may be sent to a free online AI service. Only free services are used - never a paid one - and your study material is searched only inside your own account."
-            : "Answers are written by an AI model running on this computer. No paid or cloud AI service is used, and your study material is only searched inside your own account."}
+        AI is disabled for this deployment, so prompts and study content are not currently sent to an AI provider. If Gemini is enabled later after model eligibility is verified, relevant prompts and study content may be sent to Google. Google's terms for unpaid Gemini API use say submitted content may be used to improve products and may be reviewed by humans. Avoid including sensitive personal information. The app will not switch to another provider.
       </p>
     </Card>
   );
@@ -186,7 +183,7 @@ export default function SettingsPage() {
       <AiStatus />
       <Card className="mt-6">
         <h2 className="text-base font-semibold">AI use today</h2>
-        <p className="mt-1 text-sm text-slate-600">Free AI services have limits, so each account has a daily number of AI uses. A chat reply uses 1, a study plan or flashcards 2, a quiz 3. Reading, studying cards and taking quizzes cost nothing.</p>
+        <p className="mt-1 text-sm text-slate-600">When AI is enabled, account-level daily limits apply to AI requests. Reading, studying cards and taking quizzes do not make AI requests. AI is currently unavailable while the approved Gemini free-tier model is unverified.</p>
         <AiUsageNote className="mt-3" />
       </Card>
 

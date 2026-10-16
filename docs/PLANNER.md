@@ -7,7 +7,7 @@ Route: `/study-plan` (active plan + previous plans), `/study-plan/new` (form, `?
 ```
 POST /api/study-plans/generate  ->  202 { plan: { status: "generating" } }
   preparing   checks the dates and study days (no AI if hopeless)
-  analyzing   ONE local Ollama call (JSON mode): topic names, order, first-session minutes per subject
+  analyzing   ONE Google Gemini request (JSON mode) when the AI service is enabled: topic names, order, first-session minutes per subject
   scheduling  deterministic scheduler assigns dates/times (planner/schedule.ts)
   checking    independent validator re-checks every session (validateSchedule)
   saving      one transaction: insert sessions, archive previous active plan, activate this one
@@ -17,7 +17,9 @@ POST /api/study-plans/generate  ->  202 { plan: { status: "generating" } }
 - Exactly one model call per plan. No retries, no per-day calls, no background or scheduled AI, no polling that calls AI (the UI polls `GET /api/study-plans/:id` only while a plan is generating; that is a DB read).
 - One generation per student at a time (409 `generation_in_progress`). The form and Regenerate button also guard against double clicks.
 - The model's answer is untrusted: unknown subjects are ignored, names are cleaned and length-limited, "Day 3:"/date prefixes are stripped, minutes are clamped, at most 8 AI topics per subject (the student's own topics always come first, up to 12). A reply cut off at the token limit keeps its complete topics (`salvagePlanJson`); an unreadable reply fails the plan with a safe message and saves nothing.
-- Ollama unavailable -> Mock provider (plan stored and shown as `MOCK AI`, demo topics marked "(demo)"). Never a paid provider.
+- Gemini provider errors stop the request; there is no local-model, mock, or alternate-provider fallback. AI startup is currently
+  blocked because the candidate Gemini model's free-tier eligibility is unverified. When enabled, prompts containing study-plan data
+  may be sent to Google; see `AI_POLICY.md`.
 - Weak topics: real quiz accuracy per topic (the shared "Weak" definition: under 50% over at least 5 questions) is passed to the prompt and gets an extra revision session.
 - If time is short, lower-priority topics are listed as "Not scheduled" instead of being silently dropped.
 
@@ -66,7 +68,7 @@ POST   /api/study-sessions/:id/:action    start|complete|skip|miss|reschedule
 
 ## Tests
 
-- `apps/api/src/planner/*.test.ts` - scheduler, validator, topic validation, salvage, generation (scripted AI, Mock, Ollama-down fallback, malformed JSON, deadline).
+- `apps/api/src/planner/*.test.ts` - scheduler, validator, topic validation, salvage, generation (scripted AI, provider errors, malformed JSON, deadline).
 - `apps/api/src/routes/planner.test.ts` - auth, ownership, validation, duplicate generation, session actions, reschedule, regenerate, dashboard.
 - `apps/api/src/planner/planner.integration.test.ts` - live DB, rolled back: RLS, grants, FKs, constraints, end-to-end.
 - `apps/web/src/features/planner/planner.test.tsx` - UI flows against `dev/fakePlannerBackend.ts`.
@@ -76,11 +78,11 @@ POST   /api/study-sessions/:id/:action    start|complete|skip|miss|reschedule
 
 A study session can no longer be completed with one click. **Mark complete** opens a short check:
 
-1. The student's click starts it: the local AI writes **5 multiple-choice questions** about the session's subject and topic (the same generator and quality gate as quizzes, one question type, medium difficulty). While it writes, the screen polls with plain reads every 3 s (no AI work from polling).
+1. The student's click starts it: the AI writes **5 multiple-choice questions** about the session's subject and topic (the same generator and quality gate as quizzes, one question type, medium difficulty). When enabled, the prompt may be sent to Google Gemini. While it writes, the screen polls with plain reads every 3 s (no AI work from polling).
 2. The student answers all 5 and submits. **The server grades** from the stored answer key (the key never reaches the browser before submission; the table is server-only, RLS on, no client grants).
 3. **3 of 5 or more passes**: the session is completed in the same request. **Fewer fails**: the session stays open, the correct answers and explanations are shown, and the student may request a **new set** (questions already asked by the real AI are avoided).
 4. The old direct `complete` action now returns `409 check_required` unless a passed check exists, so there is no way around the check through the API.
 
-Limits and safety: one open set per session (a double click or reload shares it, so one AI call), at most 6 sets per session per 24 hours (`429 too_many_checks`), one submission per set, answers must cover exactly the 5 questions, and another student's id behaves like a missing one. No automatic retry and no background AI: every new set is a click. If the local AI is not running, the labelled **demo** questions are used and the screen says they are placeholders.
+Limits and safety: one open set per session (a double click or reload shares it, so one AI call), at most 6 sets per session per 24 hours (`429 too_many_checks`), one submission per set, answers must cover exactly the 5 questions, and another student's id behaves like a missing one. No automatic provider fallback and no background AI: every new set is a click. Provider errors fail safely; no demo questions replace a failed AI response.
 
 Not done: questions are about the topic in general (not from the student's own notes), and the check is not applied to "skip" or "reschedule".

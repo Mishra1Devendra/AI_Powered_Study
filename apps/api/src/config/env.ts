@@ -26,35 +26,24 @@ const envSchema = z.object({
   SUPABASE_ANON_KEY: optionalString,
   SUPABASE_SERVICE_ROLE_KEY: optionalString,
 
-  // ZERO-COST AI POLICY (docs/AI_POLICY.md): the only allowed providers are a LOCAL Ollama server
-  // and the demo mock. Paid/cloud providers are disabled; there is no provider chain.
-  AI_PROVIDER: z
-    .enum(["ollama", "mock", "free"], {
-      errorMap: () => ({
-        message:
-          "must be 'ollama', 'mock' or 'free' (local AI first, then the approved FREE online services). Paid AI providers are disabled by project policy and need the owner's explicit written approval.",
-      }),
-    })
-    .default("ollama"),
-  // Free online services (only used when AI_PROVIDER=free). Server-side secrets: never sent to the browser, never logged.
-  // Models must be on the approved-free list in services/ai/free/catalog.ts; there are no endpoint variables on purpose.
-  FREE_AI_ORDER: optionalString,
-  /** "first" (default): local AI answers first, free online services are the backup. "last": free online services first, local AI last. */
-  FREE_AI_LOCAL_POSITION: z.enum(["first", "last"], { errorMap: () => ({ message: "must be 'first' or 'last'" }) }).default("first"),
-  GROQ_API_KEY: optionalString,
-  GROQ_MODEL: optionalString,
+  AI_ENABLED: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
+  AI_PROVIDER: z.string().default("gemini"),
+  // Gemini credentials are server-only. The configured model must remain on the verified free-tier allowlist.
   GEMINI_API_KEY: optionalString,
   GEMINI_MODEL: optionalString,
-  OPENROUTER_API_KEY: optionalString,
-  OPENROUTER_MODEL: optionalString,
-  OLLAMA_BASE_URL: z.string().default("http://127.0.0.1:11434"),
-  OLLAMA_MODEL: z.string().default("llama3.2:3b"),
-  /** Context window requested from Ollama (its own default is small and silently truncates). */
-  OLLAMA_NUM_CTX: z.coerce.number().int().min(2048).max(131072).default(8192),
+  /** Operator attestation; the project billing state itself cannot be checked by this application. */
+  GEMINI_BILLING_DISABLED: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
   /** Daily AI allowance of every non-admin account, in "uses" (a tutor reply is 1, a quiz 3; see AI_COST in the shared package). Administrators are never limited. */
   AI_DAILY_UNITS: z.coerce.number().int().min(1).max(100_000).default(DEFAULT_AI_DAILY_UNITS),
-  /** Local models can be slow on a CPU, especially on first load. */
   AI_TIMEOUT_MS: z.coerce.number().int().min(1000).default(180_000),
+}).superRefine((env, ctx) => {
+  if (env.AI_ENABLED && env.AI_PROVIDER !== "gemini") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["AI_PROVIDER"],
+      message: "must be 'gemini' when AI_ENABLED=true; no other AI provider or fallback is enabled",
+    });
+  }
 });
 
 export type Env = z.infer<typeof envSchema>;

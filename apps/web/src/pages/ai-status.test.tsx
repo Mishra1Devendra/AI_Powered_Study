@@ -26,13 +26,11 @@ beforeEach(() => {
   calls = [];
   report = {
     mode: "free",
-    localPosition: "last",
+    localPosition: null,
     countersSince: "2026-10-06T08:00:00.000Z",
-    lastAnswered: { service: "Service B", model: "model-b", at: "2026-10-06T09:30:00.000Z" },
+    lastAnswered: null,
     steps: [
-      { order: 1, service: "Service A", model: "model-a", where: "online", state: "resting", restingSeconds: 42, usedToday: 1000, limitPerMinute: 30, limitPerDay: 1000, limitNote: "Free plan limits.", lastResult: "rate_limited", lastAt: "2026-10-06T09:00:00.000Z" },
-      { order: 2, service: "Service B", model: "model-b", where: "online", state: "ready", restingSeconds: 0, usedToday: 7, limitPerMinute: null, limitPerDay: null, limitNote: "Set per project.", lastResult: "ok", lastAt: "2026-10-06T09:30:00.000Z" },
-      { order: 3, service: "Local AI (Ollama)", model: "llama3.2:3b", where: "this_computer", state: "ready", restingSeconds: 0, usedToday: 0, limitPerMinute: null, limitPerDay: null, limitNote: "No service limit.", lastResult: null, lastAt: null },
+      { order: 1, service: "Google Gemini", model: "gemini-2.5-flash-lite (eligibility unverified)", where: "online", state: "not_running", restingSeconds: 0, usedToday: 0, limitPerMinute: null, limitPerDay: null, limitNote: "Free-tier eligibility unverified; provider disabled.", lastResult: null, lastAt: null },
     ],
   };
   vi.stubGlobal(
@@ -63,25 +61,33 @@ const renderPage = () =>
   );
 
 describe("admin AI status screen", () => {
-  it("shows which AI answered last, the order, each service's state, usage and free limit", async () => {
-    renderPage();
-    expect(await screen.findByText(/The last answer came from/)).toHaveTextContent("Service B");
-    const list = screen.getByRole("list", { name: "AI services in the order they are tried" });
-    const items = within(list).getAllByRole("listitem");
-    expect(items).toHaveLength(3);
-    expect(items[0]).toHaveTextContent("Service A");
-    expect(items[0]).toHaveTextContent("Resting (limit reached) · 42s");
-    expect(items[0]).toHaveTextContent("1,000 of 1,000 today · up to 30/min");
-    expect(items[1]).toHaveTextContent("7 today · no fixed limit");
-    expect(items[2]).toHaveTextContent("This computer");
-    expect(screen.getByText(/free online services first, the local AI only when they cannot answer/i)).toBeInTheDocument();
-    expect(screen.getByText(/Nothing paid is ever used/)).toBeInTheDocument();
-  });
-
-  it("says so when nothing has answered yet", async () => {
-    report = { ...report, lastAnswered: null };
+  it("shows the disabled sole provider and confirms that no fallback exists", async () => {
     renderPage();
     expect(await screen.findByText(/No question has been answered since the server started/)).toBeInTheDocument();
+    const list = screen.getByRole("list", { name: "Configured AI service" });
+    const items = within(list).getAllByRole("listitem");
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent("Google Gemini");
+    expect(items[0]).toHaveTextContent("Not running");
+    expect(items[0]).toHaveTextContent("0 today · no fixed limit");
+    expect(screen.getByText(/no local model or provider fallback/i)).toBeInTheDocument();
+    expect(screen.getByText(/No other provider is tried/)).toBeInTheDocument();
+  });
+
+  it("identifies a deployment where AI is disabled and no content is sent to a provider", async () => {
+    report = {
+      mode: "disabled",
+      localPosition: null,
+      countersSince: "2026-10-06T08:00:00.000Z",
+      lastAnswered: null,
+      steps: [
+        { order: 1, service: "AI disabled", model: "none", where: "disabled", state: "not_running", restingSeconds: 0, usedToday: 0, limitPerMinute: null, limitPerDay: null, limitNote: "AI is disabled for this deployment. No prompts or study content are sent to an AI provider.", lastResult: null, lastAt: null },
+      ],
+    };
+    renderPage();
+    expect(await screen.findByText(/AI is disabled for this deployment\. No provider was configured or contacted/)).toBeInTheDocument();
+    expect(screen.getByText("AI is disabled for this deployment. No prompts or study content are sent to an AI provider.")).toBeInTheDocument();
+    expect(screen.getByText("Disabled")).toBeInTheDocument();
   });
 
   it("a student never reaches it and never requests it", async () => {

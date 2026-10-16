@@ -40,15 +40,15 @@ export function PlanStatusBadge({ status }: { status: PlanStatus }) {
   );
 }
 
-/** LOCAL AI vs MOCK AI: a plan made by the demo provider must never look like a real one. */
+/** Identifies Gemini-generated plans or clearly labels retained demo records. */
 export function PlanProvenance({ isMock, model }: { isMock: boolean; model: string | null }) {
   return isMock ? (
     <span title="The topics are placeholder demo text, not chosen by a real AI model." className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-amber-900">
       MOCK AI
     </span>
   ) : (
-    <span title="Topics chosen by an AI model running on this computer. No paid service is used." className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-800 ring-1 ring-emerald-200">
-      LOCAL AI{model ? ` · ${model}` : ""}
+    <span title={model === "free-online-ai" ? "Topics chosen online by Google Gemini. Your study-plan details may be sent to Google." : "Topics chosen by the configured AI model."} className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-800 ring-1 ring-emerald-200">
+      {model === "free-online-ai" ? "Google Gemini (online)" : `AI${model ? ` · ${model}` : ""}`}
     </span>
   );
 }

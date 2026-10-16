@@ -9,9 +9,9 @@ export interface GenerateTextRequest {
   system?: string;
   messages: ChatMessage[];
   maxTokens?: number;
-  /** Ask the model for a single valid JSON value (Ollama's local `format: "json"`). Used by quiz generation. */
+  /** Ask the provider for a single valid JSON value. Used by structured generation. */
   json?: boolean;
-  /** Overrides the provider's default time limit for THIS call (long structured generations on a slow CPU). */
+  /** Overrides the provider's default time limit for this call. */
   timeoutMs?: number;
   /** Sampling temperature (lower = more focused). Omit for the model's default. */
   temperature?: number;
@@ -29,18 +29,15 @@ export interface GenerateTextResult {
 }
 
 /**
- * Only zero-cost providers exist in this codebase: a local Ollama server, the demo mock, and "free-ai" - the free-tier chain
- * (local first, then the approved FREE online services in services/ai/free/catalog.ts; never a paid one). "free-ai" is deliberately
- * opaque: which online service answered is not exposed. Adding anything else needs the owner's explicit written approval
- * (see docs/AI_POLICY.md) - do not widen this union on your own.
+ * "free-ai" is the public, opaque provider label for the sole configured Google Gemini API provider. Historical Ollama/mock values
+ * remain in this type because older AI results may already be stored; "disabled" is used when deployment AI is explicitly off.
  */
-export type ProviderName = "ollama" | "mock" | "free-ai";
+export type ProviderName = "ollama" | "mock" | "free-ai" | "disabled";
 
 export interface StreamEnd {
   usage?: { inputTokens: number; outputTokens: number };
   /**
-   * Who actually produced this reply. Present when it can differ from the configured provider
-   * (e.g. the mock answered because Ollama was unavailable), so replies are never mislabelled.
+   * Who actually produced this reply when it can differ from the configured provider.
    */
   produced?: { model: string; isMock: boolean };
 }
@@ -50,17 +47,17 @@ export type TextStream = AsyncGenerator<string, StreamEnd, void>;
 
 /** What a health check may learn WITHOUT generating anything. */
 export interface AiProbe {
-  /** The local AI server answered. */
+  /** A provider probe succeeded. */
   reachable: boolean;
-  /** The configured model is installed (null when that could not be determined). */
+  /** The configured model is available (null when that could not be determined). */
   modelInstalled: boolean | null;
 }
 
 /** The only surface the rest of the app uses to talk to an LLM. */
 export interface LLMProvider {
-  /** A cheap "is it there?" check (no generation, no cost). Only providers with something to ask implement it. */
+  /** A non-generative availability check. Only providers with a safe probe implement it. */
   probe?(): Promise<AiProbe>;
-  /** Which services are in the chain, which answered last and their free limits. For administrators only; makes no AI request. */
+  /** Configured provider status. For administrators only; makes no AI request. */
   status?(): Promise<AiStatusReport>;
   readonly name: ProviderName;
   readonly model: string;

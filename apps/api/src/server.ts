@@ -2,27 +2,36 @@ import { buildApp } from "./app.js";
 import { EnvError, loadEnv } from "./config/env.js";
 import { createTokenVerifier } from "./auth/verify-token.js";
 import { createDb } from "./db/client.js";
-import { createLLMProvider } from "./services/ai/index.js";
+import { createDisabledLLMProvider, createLLMProvider } from "./services/ai/index.js";
 import { withTelemetry, type AiLog } from "./services/ai/telemetry.js";
 import { assessAiCost, formatCostReport } from "./services/ai/cost-safety.js";
 
 async function main() {
   const env = loadEnv();
 
-  // ZERO-COST AI POLICY: fail safely, before anything else starts, unless the configured AI is
-  // provably free and local (or the mock). Nothing here sends an AI request.
-  const cost = assessAiCost(env);
-  console.log(formatCostReport(cost));
-  if (cost.result !== "SAFE") {
-    throw new EnvError(
-      `Refusing to start: the AI configuration is ${cost.result}. Explicit written approval is required before any paid or remote AI is used. Set AI_PROVIDER=ollama (local) or AI_PROVIDER=mock.`,
-    );
+  let cost: ReturnType<typeof assessAiCost> | undefined;
+  let aiProvider;
+  if (env.AI_ENABLED) {
+    // Fail safely before serving requests unless the sole Gemini provider is configured correctly. This check sends no AI request.
+    cost = assessAiCost(env);
+    console.log(formatCostReport(cost));
+    if (cost.result !== "SAFE") {
+      throw new EnvError(
+        `Refusing to start: the Gemini AI configuration is ${cost.result}. Check the key, verify the model's current free-tier eligibility, and confirm the Google project's billing is disabled.`,
+      );
+    }
+    aiProvider = createLLMProvider(env);
+  } else {
+    console.log("AI is disabled for this deployment; no AI requests will be made.");
+    aiProvider = createDisabledLLMProvider();
   }
 
   const { db, close } = createDb(env.DATABASE_URL);
   let log: AiLog = { info: () => undefined, warn: () => undefined };
   // Every AI call is timed and counted (never its content). The wrapper only forwards calls the application already makes.
-  const ai = withTelemetry(createLLMProvider(env), { info: (o, m) => log.info(o, m), warn: (o, m) => log.warn(o, m) });
+  const ai = env.AI_ENABLED
+    ? withTelemetry(aiProvider, { info: (o, m) => log.info(o, m), warn: (o, m) => log.warn(o, m) })
+    : aiProvider;
   const app = await buildApp({
     env,
     db,
@@ -32,11 +41,10 @@ async function main() {
   });
 
   log = app.log;
-  if (cost.paidKeysPresent.length > 0) {
+  if (cost && cost.paidKeysPresent.length > 0) {
     app.log.warn(`Paid AI credentials are present in the environment (${cost.paidKeysPresent.join(", ")}). They are ignored and never used.`);
   }
-  if (ai.isMock) app.log.warn("AI_PROVIDER=mock: replies are canned demo output.");
-  else app.log.info(`AI: local Ollama (${ai.model}); if it is not running, replies fall back to the labelled mock.`);
+  app.log.info(ai.name === "disabled" ? "AI is disabled; no AI provider is configured or contacted." : `AI: Google Gemini API (${ai.model}); no alternate provider is configured.`);
 
   const shutdown = async () => {
     await app.close();

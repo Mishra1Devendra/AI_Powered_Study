@@ -4,9 +4,8 @@ import { createInMemoryAccessRepository } from "../access/testing/memory.js";
 import { buildApp } from "../app.js";
 import { loadEnv } from "../config/env.js";
 import type { Database } from "../db/client.js";
-import { AIError } from "../services/ai/errors.js";
-import { FreeAiChainProvider } from "../services/ai/free/chain.js";
 import { MockProvider } from "../services/ai/mock-provider.js";
+import { createDisabledLLMProvider } from "../services/ai/index.js";
 import type { LLMProvider } from "../services/ai/types.js";
 
 const ADMIN = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -43,31 +42,64 @@ describe("GET /api/admin/ai-status", () => {
     expect((await get("admin")).statusCode).toBe(200);
   });
 
-  it("shows the chain: services, models, order and free limits - and which one answered last", async () => {
-    const chain = new FreeAiChainProvider({
-      local: { ...answering("x"), name: "ollama", generateText: async () => Promise.reject(new AIError("local_unavailable", "off")), streamText: async function* () { throw new AIError("local_unavailable", "off"); } },
-      slots: [{ label: "g", service: "Google Gemini", model: "gemini-2.5-flash-lite", limits: { perMinute: null, perDay: null, note: "Set per project" }, provider: answering("hello") }],
-    });
-    await chain.generateText({ messages: [{ role: "user", content: "hi" }] });
-    const get = await make(chain);
+  it("reports the sole Gemini provider as disabled until the model's free-tier eligibility is verified", async () => {
+    const get = await make(answering("hello"));
     const body = aiStatusSchema.parse((await get("admin")).json());
     expect(body.mode).toBe("free");
-    expect(body.steps.map((s) => s.service)).toEqual(["Local AI (Ollama)", "Google Gemini"]);
-    expect(body.lastAnswered).toMatchObject({ service: "Google Gemini", model: "gemini-2.5-flash-lite" });
-    expect(body.steps[1]).toMatchObject({ usedToday: 1, state: "ready", limitNote: "Set per project" });
+    expect(body.localPosition).toBeNull();
+    expect(body.lastAnswered).toBeNull();
+    expect(body.steps).toHaveLength(1);
+    expect(body.steps[0]).toMatchObject({
+      service: "Google Gemini",
+      model: "m",
+      state: "not_running",
+      limitNote: "Free-tier eligibility is unverified; AI startup is blocked. No provider fallback is enabled.",
+    });
   });
 
-  it("in demo mode it says so, and shows no online service", async () => {
-    const body = aiStatusSchema.parse((await (await make(new MockProvider(0)))("admin")).json());
-    expect(body.mode).toBe("mock");
-    expect(body.steps).toHaveLength(1);
-    expect(body.steps[0]!.service).toMatch(/Demo/);
+  it("reports the deployment's explicit AI-disabled mode", async () => {
+    const get = await make(createDisabledLLMProvider());
+    const body = aiStatusSchema.parse((await get("admin")).json());
+    expect(body.mode).toBe("disabled");
+    expect(body.steps[0]).toMatchObject({
+      service: "AI disabled",
+      model: "none",
+      where: "disabled",
+      state: "not_running",
+      limitNote: "AI is disabled for this deployment. No prompts or study content are sent to an AI provider.",
+    });
+  });
+
+  it("returns a clear unavailable response for AI generation routes when AI is disabled", async () => {
+    const access = createInMemoryAccessRepository([
+      { id: ADMIN, displayName: "Alice Admin", email: "a@x.co", role: "admin", accessStatus: "active" },
+      { id: S1, displayName: "Ravi", email: "r@x.co", role: "student", accessStatus: "active" },
+    ]);
+    const app = await buildApp({
+      env,
+      db: { transaction: vi.fn() } as unknown as Database,
+      ai: createDisabledLLMProvider(),
+      verifyToken: async (t) => tokens[t] ?? null,
+      accessRepo: access.repo,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/quiz/generate",
+      headers: { authorization: "Bearer s1" },
+      payload: {},
+    });
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toMatchObject({
+      error: "unavailable",
+      message: "AI is disabled for this deployment. No AI provider was contacted.",
+    });
+    await app.close();
   });
 
   it("the public health check still shows only the generic label (no service names)", async () => {
-    const chain = new FreeAiChainProvider({ local: answering("x"), slots: [{ label: "g", service: "Google Gemini", model: "gemini-2.5-flash-lite", provider: answering("y") }] });
     const access = createInMemoryAccessRepository([]);
-    const app = await buildApp({ env, db: { transaction: vi.fn(), execute: vi.fn() } as unknown as Database, ai: chain, verifyToken: async () => null, accessRepo: access.repo });
+    const app = await buildApp({ env, db: { transaction: vi.fn(), execute: vi.fn() } as unknown as Database, ai: answering("x"), verifyToken: async () => null, accessRepo: access.repo });
     const health = (await app.inject({ url: "/api/health" })).body;
     expect(health).toContain("free-ai");
     expect(health).not.toMatch(/gemini|groq|openrouter/i);

@@ -6,7 +6,7 @@ const CYCLE = ["Learn", "Practice", "Test", "Analyze", "Improve"];
 const POINTS = [
   { title: "A tutor that knows your notes", text: "Ask about your own PDFs and get answers with the source shown." },
   { title: "Quizzes and vivas that find the gaps", text: "Practice, get checked, and see exactly what to revisit." },
-  { title: "Private and free to run", text: "Runs on a local AI on your computer. Your material stays in your account." },
+  { title: "AI with a clear privacy notice", text: "When enabled, AI requests are processed by Google Gemini; no other provider is tried." },
 ];
 
 /** The learning loop, lit one step at a time. Respects reduced motion (no timer; the first step stays lit). */
@@ -80,7 +80,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           </div>
         </div>
 
-        <p className="relative text-xs text-white/70">Your notes and progress stay private to your account.</p>
+        <p className="relative text-xs text-white/70">Your study data is scoped to your account.</p>
       </aside>
 
       <main className="relative flex items-center justify-center px-4 py-10 sm:px-8">
@@ -89,6 +89,9 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           <Logo className="mb-8 lg:hidden" />
           <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-2 text-sm text-slate-600">{subtitle}</p>
+          <p className="mt-3 text-xs leading-relaxed text-slate-600">
+            AI is disabled for this deployment, so prompts and study content are not currently sent to an AI provider. If Gemini is enabled later after model eligibility is verified, relevant content may be sent to Google. Google's unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans.
+          </p>
           <div className="mt-8">{children}</div>
         </div>
       </main>

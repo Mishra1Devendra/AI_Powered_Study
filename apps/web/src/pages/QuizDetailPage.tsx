@@ -111,7 +111,7 @@ export default function QuizDetailPage() {
           <p className="mt-4 text-sm text-slate-700">
             {q.questionCount} questions requested. <span className="text-slate-600">{formatDuration(elapsed)} so far.</span>
           </p>
-          <p className="mt-1 text-sm text-slate-600">A local AI writes a few questions at a time, then each one is checked, so this can take several minutes. You can leave this page; your quiz keeps being made and will appear in your list.</p>
+          <p className="mt-1 text-sm text-slate-600">Google Gemini writes a few questions at a time when AI is enabled, then each one is checked. You can leave this page; your quiz keeps being made and will appear in your list.</p>
         </section>
       )}
 
@@ -119,7 +119,7 @@ export default function QuizDetailPage() {
         <section aria-label="Quiz could not be created" className="space-y-4 rounded-(--radius-card) bg-white p-6 shadow-card ring-1 ring-slate-200/70">
           <h2 className="text-lg font-semibold tracking-tight text-slate-900">Quiz generation failed</h2>
           <Alert tone="error">{q.error ?? "The quiz couldn't be created."}</Alert>
-          <p className="text-sm text-slate-600">No questions from this attempt were saved, and your other quizzes are unaffected. You can retry with the same settings, or change them (fewer questions usually works better with a small local AI).</p>
+          <p className="text-sm text-slate-600">No questions from this attempt were saved, and your other quizzes are unaffected. You can retry with the same settings, or change them. Provider errors do not trigger another AI provider.</p>
           <div className="flex flex-wrap gap-2">
             <Button loading={pending === "new"} onClick={() => void run("new", async () => p.quiz((await regenerateQuiz(client, q.id)).id))}>
               Retry

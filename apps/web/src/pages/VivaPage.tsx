@@ -63,8 +63,10 @@ export default function VivaPage() {
             Examiner: <ProvenanceBadge isMock={ai.isMock} model={ai.model} />
           </p>
         )}
+        <p className="mt-4 max-w-xl text-xs leading-relaxed text-white/75">
+          When enabled, your viva topic and answers may be sent to Google Gemini. Google's unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI is currently unavailable while model free-tier eligibility is unverified.
+        </p>
       </header>
-      {ai?.isMock && <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-900">The local AI isn&apos;t running, so this viva will use canned demo questions and feedback. Start your local AI for a real examiner.</p>}
 
       <div className="empty:hidden">
         <ContinueBar hideFor="/viva" />
@@ -77,7 +79,7 @@ export default function VivaPage() {
             <Spinner className="mt-0.5 h-5 w-5 shrink-0" />
             <span>
               <strong className="block text-base font-semibold">Preparing your Viva…</strong>
-              The examiner is preparing your first question. Your local AI can take a minute or more.
+              The examiner is preparing your first question. This can take a little while.
             </span>
           </div>
         )}

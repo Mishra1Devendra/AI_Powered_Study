@@ -9,7 +9,7 @@ from that document**, with citations.
 ```
 Browser ──(JWT)──▶ Fastify API ──▶ Supabase Storage  (private bucket "notes", acting AS the student)
                         │      └──▶ Postgres (documents, document_chunks, conversations, messages; RLS)
-                        └─────────▶ Local Ollama (or the labelled mock). Never a paid provider.
+                        └─────────▶ Google Gemini (when enabled; no fallback)
 ```
 
 | Piece | Where |
@@ -76,9 +76,8 @@ important_topics, ask (needs `question`).
 * **Citations are metadata, not model output.** The server builds `SourceRef`s (`S1`, chunk, page,
   heading) from the chunks it supplied. The UI makes `[S#]` clickable **only** if `S#` is in that
   message's sources; an invented `[S9]` stays plain text. Source chips show real page/heading.
-* **Provenance**: every answer is labelled **LOCAL AI · model** or **MOCK AI**.
-* Small local models (e.g. 3B) sometimes skip citations or hedge awkwardly; larger local models do
-  better. The labels and chips never depend on what the model claims.
+* **Provenance**: AI answers identify the configured provider/model as returned by the API.
+* Model output can skip citations or hedge awkwardly; citations and source chips are constructed from retrieved passages, never trusted from model text.
 
 ## Security model
 
@@ -98,14 +97,11 @@ New tables `documents`, `document_chunks`; new columns `conversations.document_i
 private bucket `notes` (10 MB, pdf/txt/md MIME types); storage policies
 `notes_objects_select_own`, `notes_objects_insert_own`. Additive only; existing data untouched.
 
-## Running locally (zero cost)
+## Running locally
 
-1. Install Ollama (https://ollama.com) and `ollama pull llama3.2:3b`.
-2. `.env`: `AI_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://127.0.0.1:11434`, `OLLAMA_MODEL=llama3.2:3b`,
-   `OLLAMA_NUM_CTX=8192`, `AI_TIMEOUT_MS=180000`.
-3. `npm run dev`, sign in, open **Notes**.
-
-If Ollama is not running the API falls back to the clearly labelled **MOCK AI**. See `AI_POLICY.md`.
+The API currently refuses to start because Google's current free-tier eligibility for the candidate model is unverified.
+There is no Ollama, mock, or other-provider fallback. Do not make live AI requests to establish model eligibility; see
+`AI_POLICY.md` and `FREE_AI.md`.
 
 Design preview without any backend: `npm run dev -w @copilot/web` then `/dev/notes`
 (fixtures only; removed from production builds, checked by `npm run verify:bundle -w @copilot/web`).
@@ -114,8 +110,8 @@ Design preview without any backend: `npm run dev -w @copilot/web` then `/dev/not
 
 | Symptom | Cause / fix |
 |---|---|
-| Answers say MOCK AI | Ollama not running or model missing: `ollama serve`, `ollama pull llama3.2:3b` |
-| First answer takes 30 s+ | Model loading on CPU; later answers are faster. Raise `AI_TIMEOUT_MS` if needed |
+| API refuses to start for AI policy | The model is not approved until its current free-tier eligibility is verified from official Google documentation |
+| Gemini quota/access error | The request fails safely; no alternate provider is tried |
 | "File storage is not configured" | `SUPABASE_URL` / `SUPABASE_ANON_KEY` missing in `.env` |
 | Upload FAILED "no selectable text" | Scanned PDF: use a text-based PDF or paste the text |
 | "You already uploaded this" | Same content hash exists; open the existing note via the link |

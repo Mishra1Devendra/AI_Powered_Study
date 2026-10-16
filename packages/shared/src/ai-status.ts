@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * What an ADMINISTRATOR sees about the AI: which services are in the chain, which one answered last, and each one's free limit.
- * Students and the public health check never get this (they only see the generic "free-ai" label); the endpoint that returns it
+ * Students and the public health check never get this detail; they only see generic provider labels. The endpoint that returns it
  * requires an admin. Contains no keys, prompts or answers.
  */
 export const aiStepStatusSchema = z.object({
@@ -10,7 +10,7 @@ export const aiStepStatusSchema = z.object({
   /** Display name of the service, e.g. "Local AI (Ollama)" or an approved free online service. */
   service: z.string(),
   model: z.string(),
-  where: z.enum(["this_computer", "online"]),
+  where: z.enum(["this_computer", "online", "disabled"]),
   /** ready = will be tried; resting = it just hit a limit or failed and is being skipped for a short while; not_running = the local AI is off. */
   state: z.enum(["ready", "resting", "not_running"]),
   restingSeconds: z.number().int().nonnegative(),
@@ -27,7 +27,7 @@ export const aiStepStatusSchema = z.object({
 export type AiStepStatus = z.infer<typeof aiStepStatusSchema>;
 
 export const aiStatusSchema = z.object({
-  mode: z.enum(["free", "ollama", "mock"]),
+  mode: z.enum(["free", "ollama", "mock", "disabled"]),
   /** Where the local AI sits in the chain ("free" mode only). */
   localPosition: z.enum(["first", "last"]).nullable(),
   /** The service and model that produced the most recent answer since the server started; null if none yet. */

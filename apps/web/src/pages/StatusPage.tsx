@@ -50,7 +50,7 @@ export default function StatusPage() {
               ok={state.data.database.ok}
               detail={state.data.database.ok ? "Connected" : (state.data.database.error ?? "Unavailable")}
             />
-            <Row label="AI provider" ok={!state.data.ai.isMock} detail={state.data.ai.isMock ? "DEMO mock - no AI key configured" : state.data.ai.provider === "free-ai" ? "Free AI (local first, then free online services)" : "Local AI (on this computer)"} />
+            <Row label="AI provider" ok={!state.data.ai.isMock && state.data.ai.provider !== "disabled"} detail={state.data.ai.provider === "disabled" ? "Disabled for this deployment" : state.data.ai.isMock ? "DEMO mock" : state.data.ai.provider === "free-ai" ? "Google Gemini (online; no fallback)" : "AI provider unavailable"} />
           </ul>
         )}
       </Card>

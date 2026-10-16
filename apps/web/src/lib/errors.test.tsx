@@ -30,6 +30,11 @@ describe("friendly errors", () => {
     expect(friendlyMessage(new Error("ECONNREFUSED"), "Custom fallback.")).toBe("Custom fallback.");
   });
 
+  it("keeps the safe message for an explicit AI-unavailable response", () => {
+    expect(friendlyMessage(new ApiError(503, "AI is disabled for this deployment.", { error: "unavailable" }))).toBe("AI is disabled for this deployment.");
+    expect(friendlyMessage(new ApiError(503, "internal detail", { error: "internal_error" }))).toBe(GENERIC_LOAD_MESSAGE);
+  });
+
   it("a message the server wrote for the student (4xx) is kept", () => {
     expect(friendlyMessage(new ApiError(404, "Note not found."))).toBe("Note not found.");
     expect(friendlyMessage(new ApiError(409, "This note is not ready yet."))).toBe("This note is not ready yet.");
@@ -120,25 +125,28 @@ describe("Settings", () => {
     return { user };
   };
 
-  it("shows the account, preferences, how the AI works, and sign out - and exposes no secrets", async () => {
-    stub(() => health({ provider: "ollama", isMock: false, model: "llama3.2:3b" }));
+  it("shows the account, preferences, AI-disabled state and privacy notice - and exposes no secrets", async () => {
+    stub(() => health({ provider: "disabled", isMock: false, model: "disabled" }));
     renderSettings();
     expect(await screen.findByLabelText("Display name")).toHaveValue("Rahul Sharma");
     expect(screen.getByLabelText("Email")).toBeDisabled();
     expect(screen.getByLabelText("Time zone")).toHaveValue("Asia/Kolkata");
-    expect(await screen.findByText("Local AI · llama3.2:3b")).toBeInTheDocument();
-    expect(screen.getByText("On this computer")).toBeInTheDocument();
-    expect(screen.getByText(/No paid or cloud AI service is used/)).toBeInTheDocument();
+    expect(await screen.findByText("AI disabled")).toBeInTheDocument();
+    expect(screen.getByText("Disabled; no external AI requests")).toBeInTheDocument();
+    expect(screen.getByText(/AI is disabled for this deployment, so prompts and study content are not currently sent to an AI provider/i)).toBeInTheDocument();
+    expect(screen.getByText(/If Gemini is enabled later after model eligibility is verified, relevant prompts and study content may be sent to Google/i)).toBeInTheDocument();
+    expect(screen.getByText(/may be used to improve products and may be reviewed by humans/i)).toBeInTheDocument();
+    expect(screen.getByText(/will not switch to another provider/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     const text = document.body.textContent ?? "";
     expect(text).not.toMatch(/api[_ -]?key|service[_ -]?role|password|secret|token|sk-|postgres/i);
   });
 
-  it("labels the demo AI plainly when the local AI is not running", async () => {
+  it("labels demo AI plainly when configured", async () => {
     stub(() => health({ provider: "mock", isMock: true, model: "mock-demo" }));
     renderSettings();
     expect(await screen.findByText("Demo AI (mock)")).toBeInTheDocument();
-    expect(screen.getByText(/canned demo text and are labelled that way/)).toBeInTheDocument();
+    expect(screen.getByText(/canned demo text, labelled as demo/)).toBeInTheDocument();
   });
 
   it("if the AI status can't be read, the rest of Settings still works", async () => {
@@ -149,7 +157,7 @@ describe("Settings", () => {
   });
 
   it("saves the name and time zone together with what was chosen", async () => {
-    const calls = stub(() => health({ provider: "ollama", isMock: false, model: "llama3.2:3b" }));
+    const calls = stub(() => health({ provider: "free-ai", isMock: false, model: "gemini-2.5-flash-lite" }));
     const { user } = renderSettings();
     const name = await screen.findByLabelText("Display name");
     await user.clear(name);
@@ -160,7 +168,7 @@ describe("Settings", () => {
   });
 
   it("an empty name is explained and nothing is sent", async () => {
-    const calls = stub(() => health({ provider: "ollama", isMock: false, model: "llama3.2:3b" }));
+    const calls = stub(() => health({ provider: "free-ai", isMock: false, model: "gemini-2.5-flash-lite" }));
     const { user } = renderSettings();
     await user.clear(await screen.findByLabelText("Display name"));
     await user.click(screen.getByRole("button", { name: "Save changes" }));

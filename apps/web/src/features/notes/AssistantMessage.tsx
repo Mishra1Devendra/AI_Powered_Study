@@ -4,15 +4,15 @@ import { ASSISTANT_ACTION_INFO, assistantActionSchema, type SourceRef, type Tuto
 import { CopyButton, TutorAvatar } from "../tutor/MessageItem";
 import { RichText } from "../tutor/RichText";
 
-/** Which AI wrote an answer. LOCAL AI = a real model on this computer; MOCK AI = canned demo text. */
+/** Identifies Gemini-generated content or clearly labels retained demo records. */
 export function Provenance({ isMock, model }: { isMock: boolean; model: string | null }) {
   return isMock ? (
     <span title="This answer is canned demo text, not from a real AI model." className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-amber-900">
       MOCK AI
     </span>
   ) : (
-    <span title="Answered by an AI model running on this computer. No paid service is used." className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-800 ring-1 ring-emerald-200">
-      LOCAL AI{model ? ` · ${model}` : ""}
+    <span title={model === "free-online-ai" ? "Answered online by Google Gemini. Your prompt and relevant study content may be sent to Google." : "Answered by the configured AI model."} className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-800 ring-1 ring-emerald-200">
+      {model === "free-online-ai" ? "Google Gemini (online)" : `AI${model ? ` · ${model}` : ""}`}
     </span>
   );
 }

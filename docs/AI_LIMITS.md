@@ -1,6 +1,6 @@
 # Daily AI limits
 
-The free AI services have free-tier quotas, so no single account may use them all up. Every account **except administrators** has a daily allowance of AI "uses"; administrators have none (and are never counted).
+Every account **except administrators** has a daily allowance of AI "uses"; administrators have none (and are never counted). Google Gemini is the only intended provider, but its candidate model's free-tier eligibility is currently unverified and the API is disabled. These application limits do not establish provider quota or pricing terms; see `AI_POLICY.md`.
 
 ## What costs what
 

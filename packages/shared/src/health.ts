@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const aiProviderStatusSchema = z.object({
-  provider: z.enum(["ollama", "mock", "free-ai"]),
+  provider: z.enum(["ollama", "mock", "free-ai", "disabled"]),
   /** True when responses are canned demo output, not a real model. */
   isMock: z.boolean(),
   model: z.string(),

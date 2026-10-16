@@ -9,7 +9,7 @@ Question answered: **what should I study next, why, and what is the best way to 
 Database (existing tables only)
   -> facts, calculated by the app / database (accuracy, repeated misses, recency, vivas, plan, tutor, notes)
   -> deterministic engine (recommendations/engine.ts)  -> ranked recommendations with reasons and actions
-  -> [optional, on a button press] ONE local-AI call that rewrites those facts in friendlier words
+  -> [optional, on a button press] ONE Gemini request that rewrites those facts in friendlier words (when enabled)
   -> frontend
 ```
 
@@ -20,8 +20,10 @@ Database (existing tables only)
   makes **one** call - no retry, never on page load, never scheduled. The answer is checked before it is shown: unknown ids are
   dropped, texts are cleaned and length-limited, and **any number that is not in the supplied facts is dropped** (an invented
   score, count or date). Reading is tolerant: a reply with a repeated `items` key or broken JSON still yields its complete,
-  valid items. Any failure is a normal `available: false` answer with a calm message, never an error page.
-- Ollama unavailable -> the Mock provider (clearly "[Demo]", marked MOCK AI). Never anything paid.
+  valid items. Any failure is a normal `available: false` answer with a calm message, never an error page. When enabled, those
+  recommendation facts may be sent to Google Gemini; see `AI_POLICY.md`.
+- Gemini errors do not fall back to a local model, mock, or another provider. AI startup is currently blocked while the candidate
+  model's free-tier eligibility is unverified.
 
 ## Where the facts come from (no new tables, no migrations)
 
@@ -76,7 +78,7 @@ valid token; the student comes only from the token. A recommendation never expos
 
 ## Known limitations
 
-- A small local model sometimes ignores instructions; that is why its text is checked and why the page never depends on it.
+- Provider output is untrusted; that is why its text is checked and why the deterministic recommendations never depend on it.
 - Topic matching is by name (case/space-insensitive). "Algebra" in a quiz and "Algebra basics" in a plan are different topics.
 - Questions without a topic are left out; notes links need quizzes generated from notes with topics on their questions.
 - Repeated mistakes need retakes (the same question seen in 2+ attempts).
@@ -84,7 +86,7 @@ valid token; the student comes only from the token. A recommendation never expos
 ## Tests
 
 `apps/api/src/recommendations/engine.test.ts` (calculations and ranking), `apps/api/src/routes/recommendations.test.ts` (auth, ownership,
-validation, empty data, timezone, no AI on listing, explanation checks, Mock/Ollama paths), `recommendations.integration.test.ts` (live DB,
+validation, empty data, timezone, no AI on listing, explanation checks, provider errors), `recommendations.integration.test.ts` (live DB,
 rolled back), `apps/web/src/features/recommendations/recommendations.test.tsx`; dev preview `/dev/recommendations`
 (`?empty=1`, `?plan=1`).
 

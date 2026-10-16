@@ -13,8 +13,8 @@ Next question   POST /api/viva/sessions/:id/next   1 model call: the next questi
 End early       POST /api/viva/sessions/:id/abandon  no model call
 ```
 
-- Every call is a direct reaction to a student action: no background AI, no polling, no scheduled work. The request stays
-  open while the local model works (a viva step can take a minute or more on modest hardware); the UI shows the real step
+- Every call is a direct reaction to a student action: no background AI, no polling, no scheduled work. When enabled, prompts that
+  include the student's subject, topic, or answer may be sent to Google Gemini; the UI shows the real step
   ("Preparing your Viva…", "Evaluating your answer…", "Preparing the next question…") and never a made-up percentage.
 - One model step at a time per student: a second click or a second tab gets `409 examiner_busy`; the UI also guards
   double clicks. Asking for "next" when the next question already exists returns it without any model call.
@@ -52,10 +52,11 @@ named as missing (most often first) and the weakest dimension if it is below 60%
 The formula and the AI's scores are **not** scientifically validated, and the UI says so ("AI-generated evaluation ...
 advisory").
 
-## Mock fallback
+## Provider policy
 
-Ollama unavailable -> the Mock provider (never anything paid). Questions and feedback are deterministic, clearly marked
-"[Demo]", and the viva is stored and shown as **MOCK AI (demo)** (sticky: it stays mock if any step used the demo provider).
+The active API has no local-model, mock, or alternate-provider fallback. Gemini quota or provider errors are returned safely.
+The API currently refuses to start because the candidate model's free-tier eligibility is unverified. See `AI_POLICY.md` for
+the external-processing and data-use notice.
 
 ## State machine
 
@@ -77,15 +78,14 @@ count. The dashboard card shows the latest completed viva's score (any time) or 
 
 ## Known limitations
 
-- A 3B local model can misjudge answers; the evaluation is advisory and the key points it writes can be imperfect.
-- On modest hardware a step takes tens of seconds to a few minutes; a 5-question viva makes about 10 model calls.
+- AI can misjudge answers; the evaluation is advisory and the key points it writes can be imperfect.
 - Not grounded in notes (no RAG in this phase): the examiner only knows the subject/topic you typed.
 - An evaluation that fails after the answer was typed is not stored (the text stays in the page to resubmit).
 
 ## Tests
 
 `apps/api/src/viva/*.test.ts` (validation, scoring), `apps/api/src/routes/viva.test.ts` (auth, ownership, validation, flow,
-duplicates, completion, abandon, AI errors/retry/timeout, Mock/Ollama paths), `viva.integration.test.ts` (live DB, rolled back:
+duplicates, completion, abandon, AI errors/retry/timeout), `viva.integration.test.ts` (live DB, rolled back:
 RLS, column secrecy, foreign keys, constraints, end to end), `apps/web/src/features/viva/viva.test.tsx`; dev preview `/dev/viva`.
 
 ## Phase 11: viva from your own material

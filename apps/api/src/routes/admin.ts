@@ -72,25 +72,25 @@ export async function adminRoutes(app: FastifyInstance, { repo, bugs, ai, authen
   if (ai) {
     app.get("/api/admin/ai-status", guard, async (): Promise<AiStatusReport> => {
       if (ai.status) return aiStatusSchema.parse(await ai.status());
-      // Local-only or demo mode: a one-line report with no online services.
+      // The configured Gemini provider has no probe; status reports configuration only and makes no AI request.
       const now = new Date().toISOString();
       return aiStatusSchema.parse({
-        mode: ai.isMock ? "mock" : "ollama",
+        mode: "free",
         localPosition: null,
         lastAnswered: null,
         countersSince: now,
         steps: [
           {
             order: 1,
-            service: ai.isMock ? "Demo AI (canned replies)" : "Local AI (Ollama)",
+            service: "Google Gemini",
             model: ai.model,
-            where: "this_computer",
-            state: "ready",
+            where: "online",
+            state: "not_running",
             restingSeconds: 0,
             usedToday: 0,
             limitPerMinute: null,
             limitPerDay: null,
-            limitNote: ai.isMock ? "Demo replies only; no real AI is running." : "No service limit: it runs on this computer. No free online service is configured.",
+            limitNote: "Free-tier eligibility is unverified; AI startup is blocked. No provider fallback is enabled.",
             lastResult: null,
             lastAt: null,
           },

@@ -28,22 +28,41 @@ async function main() {
     const row = info[0];
     if (row) console.log(`      database=${row.db}  server=${row.version}  public tables=${row.tables}`);
 
-    // Guard: every table in `public` must have Row Level Security enabled.
-    const tables = await db.execute<{ name: string; rls: boolean; policies: string }>(sql`
+    // A table with no policies is safe only when neither client role has table- or column-level access.
+    const tables = await db.execute<{ name: string; rls: boolean; policies: string; anonAccess: boolean; authenticatedAccess: boolean }>(sql`
       select c.relname as name, c.relrowsecurity as rls,
-             (select count(*) from pg_policies p where p.schemaname = 'public' and p.tablename = c.relname)::text as policies
+             (select count(*) from pg_policies p where p.schemaname = 'public' and p.tablename = c.relname)::text as policies,
+             (
+               has_table_privilege('anon', c.oid, 'SELECT') or has_table_privilege('anon', c.oid, 'INSERT')
+               or has_table_privilege('anon', c.oid, 'UPDATE') or has_table_privilege('anon', c.oid, 'DELETE')
+               or has_table_privilege('anon', c.oid, 'TRUNCATE') or has_table_privilege('anon', c.oid, 'REFERENCES')
+               or has_table_privilege('anon', c.oid, 'TRIGGER')
+               or has_any_column_privilege('anon', c.oid, 'SELECT') or has_any_column_privilege('anon', c.oid, 'INSERT')
+               or has_any_column_privilege('anon', c.oid, 'UPDATE') or has_any_column_privilege('anon', c.oid, 'REFERENCES')
+             ) as "anonAccess",
+             (
+               has_table_privilege('authenticated', c.oid, 'SELECT') or has_table_privilege('authenticated', c.oid, 'INSERT')
+               or has_table_privilege('authenticated', c.oid, 'UPDATE') or has_table_privilege('authenticated', c.oid, 'DELETE')
+               or has_table_privilege('authenticated', c.oid, 'TRUNCATE') or has_table_privilege('authenticated', c.oid, 'REFERENCES')
+               or has_table_privilege('authenticated', c.oid, 'TRIGGER')
+               or has_any_column_privilege('authenticated', c.oid, 'SELECT') or has_any_column_privilege('authenticated', c.oid, 'INSERT')
+               or has_any_column_privilege('authenticated', c.oid, 'UPDATE') or has_any_column_privilege('authenticated', c.oid, 'REFERENCES')
+             ) as "authenticatedAccess"
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind in ('r', 'p')
       order by c.relname
     `);
     let rlsOk = true;
     for (const t of tables) {
-      const good = t.rls && Number(t.policies) > 0;
+      const clientAccess = t.anonAccess || t.authenticatedAccess;
+      const good = t.rls && (Number(t.policies) > 0 || !clientAccess);
       rlsOk &&= good;
-      console.log(`      ${good ? "OK  " : "FAIL"}  public.${t.name}: RLS ${t.rls ? "on" : "OFF"}, ${t.policies} polic${t.policies === "1" ? "y" : "ies"}`);
+      const policyState = `${t.policies} polic${t.policies === "1" ? "y" : "ies"}`;
+      const accessState = clientAccess ? "client grants present" : "no anon/authenticated grants";
+      console.log(`      ${good ? "OK  " : "FAIL"}  public.${t.name}: RLS ${t.rls ? "on" : "OFF"}, ${policyState}, ${accessState}`);
     }
     if (!rlsOk) {
-      console.error("FAIL  A public table is missing RLS or has no policies.");
+      console.error("FAIL  A public table has RLS disabled, or has client grants without an RLS policy.");
       process.exitCode = 1;
     }
   } finally {

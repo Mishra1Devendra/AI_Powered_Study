@@ -1,15 +1,15 @@
 # Knowledge Grounding (Phase 11)
 
-The AI answers from the student's **own uploaded study material** - privately, locally, at zero AI cost - and says plainly when
-the material does not contain the answer.
+The AI uses the student's **own uploaded study material** as context and says plainly when the material does not contain the answer.
+When enabled, prompts and relevant note passages may be sent to Google Gemini; the current candidate model's free-tier eligibility is
+unverified, so the API is presently blocked from starting. See `AI_POLICY.md` for the privacy notice and status.
 
 ```
 Upload -> Storage -> Extract -> Clean -> Chunk -> Store chunks (Postgres) -> Index (full-text)
-   question -> search words -> retrieve relevant chunks -> ONE local Ollama call -> answer + real sources
+   question -> search words -> retrieve relevant chunks -> one Gemini request (when enabled) -> answer + real sources
 ```
 
-Nothing in this chain calls a paid or cloud service. Ollama unavailable -> the labelled **MOCK** provider; retrieval itself never
-needs a model.
+There is no local-model or alternate-provider fallback. Retrieval itself does not need a model.
 
 ## What was reused (nothing was duplicated)
 
@@ -17,7 +17,7 @@ needs a model.
 | --- | --- |
 | `documents`, `document_chunks` (+ `search_tsv` GIN index) | the store **and** the index - no new document/chunk tables |
 | Notes pipeline (`extract` -> `normalize` -> `chunker` -> `saveChunksAndMarkReady`) | unchanged; chunks already carry real `page` / `heading` metadata |
-| `LLMProvider` + `OllamaOrMockProvider` | the only AI path; no second abstraction |
+| `LLMProvider` | shared application interface; the active API factory is Gemini-only |
 | `createTurn` (streamed, validated, persisted reply) | Tutor and Notes assistant; gained a "fixed reply" path for "not in your notes" |
 | `selectContext` / `extractKeywords` (`notes/retrieval.ts`) | the Notes assistant keeps its document-wide actions; keywords are shared |
 | Quiz notes sources + per-question `source_ref` | already grounded and cited; only the picker changed |
@@ -36,8 +36,7 @@ needs a model.
 4. **Top 3-8 passages** (default 5, never more than 8) within a **6,000-character** budget. Whole documents are never sent.
 5. **One retrieval + one generation per question.** No model call per chunk. No embeddings are computed on a question.
 
-**Vector search is not used.** The `vector` (pgvector 0.8.2) extension is *available* in this Supabase project but is **not installed**,
-and Ollama has only `llama3.2:3b` - **no embedding model**. Per the phase rules nothing was downloaded and the extension was not enabled.
+**Vector search is not used.** The `vector` (pgvector 0.8.2) extension is *available* in this Supabase project but is **not installed**. Per the phase rules nothing was downloaded and the extension was not enabled.
 `retrieveRelevantChunks` is the single seam where vector search could be added later (store embeddings per chunk, embed once at index
 time, never on every question) without touching Tutor, Quiz, Viva, Notes or Recommendations.
 
@@ -60,9 +59,9 @@ the server - another student's id is a 404 and nothing is saved) and `grounding:
 
 | Situation | What happens | Saved on the reply |
 | --- | --- | --- |
-| Relevant passages found | one Ollama call with the passages in a fenced `<study_material>` block; sources returned | `grounding: grounded`, `sources[]` |
+| Relevant passages found | one Gemini request with the passages in a fenced `<study_material>` block; sources returned | `grounding: grounded`, `sources[]` |
 | Asked about a chosen document, or said "my notes / my pdf...", and nothing relevant | **No AI call.** "I couldn't find this topic in your uploaded material. I can still explain it using general knowledge." + **Explain generally** | `grounding: not_found`, model `knowledge-index`, no sources |
-| "Explain generally" | one Ollama call, told to label it as general | `grounding: general` |
+| "Explain generally" | one Gemini request, told to label it as general | `grounding: general` |
 | Ordinary question, nothing relevant (or no documents) | an ordinary tutor turn, exactly as before | none |
 | Follow-up with few distinctive words ("explain that again") | reuses the passages of the previous grounded answer | `grounded` |
 

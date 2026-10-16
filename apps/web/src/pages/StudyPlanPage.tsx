@@ -47,7 +47,7 @@ export default function StudyPlanPage() {
           </div>
           <div className="rounded-(--radius-card) bg-white shadow-card ring-1 ring-slate-200/70">
             <EmptyState title="No study plan yet" icon={<PlanIcon className="h-6 w-6" />}>
-              Tell us your exam date, subjects and how much time you have. Your local AI picks the topics and the app builds a day-by-day schedule that fits.
+              Tell us your exam date, subjects and how much time you have. Google Gemini picks the topics when AI is enabled, and the app builds a day-by-day schedule that fits.
             </EmptyState>
             <div className="flex justify-center pb-10">
               <LinkButton to={p.create}>Create study plan</LinkButton>

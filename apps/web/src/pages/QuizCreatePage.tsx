@@ -71,7 +71,9 @@ export default function QuizCreatePage() {
         )}
       </header>
       <AiUsageNote cost={AI_COST.quiz} className="mt-4" />
-      {ai?.isMock && <p className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-900">The local AI isn&apos;t running, so this quiz will contain placeholder demo questions. Start your local AI for real ones.</p>}
+      <p className="mt-3 text-sm leading-relaxed text-slate-600">
+        When enabled, quiz prompts and relevant note passages are sent to Google Gemini for processing. Google&apos;s unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI generation is currently unavailable while model free-tier eligibility is unverified.
+      </p>
 
       <div className="mt-6 rounded-(--radius-card) bg-white p-5 shadow-card ring-1 ring-slate-200/70 sm:p-7">
         {options.state.status === "loading" && (

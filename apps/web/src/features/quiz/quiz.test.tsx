@@ -104,11 +104,11 @@ describe("quiz home", () => {
     expect(within(failed).queryByRole("button", { name: /Start/ })).toBeNull();
   });
 
-  it("labels a real local model's quiz as LOCAL AI", async () => {
+  it("labels historical model results without claiming they ran locally", async () => {
     useBackend({ mock: false });
     backend.addReadyQuiz({ title: "Real quiz", isMock: false, model: "llama3.2:3b" });
     renderQuiz();
-    expect(await screen.findByText("LOCAL AI · llama3.2:3b")).toBeInTheDocument();
+    expect(await screen.findByText("AI · llama3.2:3b")).toBeInTheDocument();
     expect(screen.queryByText("MOCK AI")).toBeNull();
   });
 
@@ -257,10 +257,11 @@ describe("creating a quiz", () => {
     expect(screen.getByRole("link", { name: "See the quiz being created" })).toHaveAttribute("href", `/quiz/${busy.id}`);
   });
 
-  it("warns that demo questions are placeholders when the local AI is not running", async () => {
+  it("discloses Google processing and free-tier content terms before quiz generation", async () => {
     renderQuiz("/quiz/new");
-    expect(await screen.findByText(/placeholder demo questions/)).toBeInTheDocument();
-    expect(screen.getByText("MOCK AI")).toBeInTheDocument();
+    expect(await screen.findByText(/quiz prompts and relevant note passages are sent to Google Gemini/i)).toBeInTheDocument();
+    expect(screen.getByText(/may be used to improve products and may be reviewed by humans/i)).toBeInTheDocument();
+    expect(screen.getByText(/free-tier eligibility is unverified/i)).toBeInTheDocument();
   });
 
   it("after generating, the quiz page shows progress and then becomes startable on its own", async () => {

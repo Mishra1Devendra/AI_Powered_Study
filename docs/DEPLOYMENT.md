@@ -1,7 +1,7 @@
 # Deployment readiness (Phase 13)
 
 **Status: documented only. Nothing has been deployed, and nothing in this repo deploys automatically.**
-Read `docs/AI_POLICY.md` first: the AI is a *local* Ollama model with a labelled Mock fallback. Paid/cloud AI is not implemented and must not be added to make a deployment "work".
+Read `docs/AI_POLICY.md` first. The API can run with AI explicitly disabled by default; enabling Gemini remains blocked until the exact model's free-tier eligibility is verified. There is no local-model or alternate-provider fallback.
 
 ## 1. The pieces
 
@@ -10,7 +10,7 @@ Read `docs/AI_POLICY.md` first: the AI is a *local* Ollama model with a labelled
 | Web app | Static files built by Vite (`apps/web/dist`) | Any static host / CDN / the same server as the API |
 | API | Fastify 5 (Node 22+), started with `tsx` | A Node host you control |
 | Database + Auth + Storage | Supabase (Postgres, GoTrue, Storage) | Supabase (already hosted) |
-| AI | Ollama + `llama3.2:3b` | **See section 5 - this is the hard part** |
+| AI | Google Gemini (intended; currently blocked pending free-tier verification) | **See section 5** |
 
 ## 2. Frontend
 
@@ -22,6 +22,7 @@ npm run verify:bundle -w @copilot/web   # fails if a secret, an AI SDK or a dev-
 
 * Public values only: `SUPABASE_URL` and `SUPABASE_ANON_KEY` (RLS protects the data, these are not secrets). The web build never reads the service-role key or any AI setting.
 * The web app calls **relative** URLs (`/api/...`). There is no `VITE_API_URL`. In production the static host and the API must therefore be reachable on the **same origin** (a reverse proxy that sends `/api/*` to the API and everything else to `index.html`). Without that, every request fails. This is the single most likely deployment mistake.
+* For Vercel, the root `vercel.json` routes `/api/*` to the API service first; the Vite web service then rewrites its paths to `/index.html` for client-side routes and refreshes.
 * The API registers no CORS plugin on purpose (same-origin only). `WEB_ORIGIN` exists in the env schema but is not used for CORS today.
 * Single-page app: configure the host to answer unknown paths with `index.html` (client-side routes such as `/notes/...`).
 * The app ships a web manifest (installable) and **no service worker**: it does not work offline and does not claim to.
@@ -43,10 +44,13 @@ Environment variables (see `.env.example`; real values go in the host's secret s
 | `DATABASE_URL` | **yes** | Supabase Session pooler URL (IPv4, supports migrations) |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | no (public) | JWTs are verified against `<SUPABASE_URL>/auth/v1/.well-known/jwks.json` |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | currently unused; leave empty |
-| `AI_PROVIDER` | no | `ollama` (default) or `mock`. Nothing else is accepted |
-| `OLLAMA_BASE_URL` | no | must be loopback (`127.0.0.1`/`localhost`). Remote hosts are refused by design |
+| `AI_ENABLED` | no | Defaults to `false`; when false, API starts with generative AI routes returning `503 unavailable` and makes no external AI requests. Set `true` only after verifying the model and all AI policy gates |
+| `AI_PROVIDER` | no | Must be `gemini` when `AI_ENABLED=true`; ignored while AI is disabled. No alternate-provider fallback |
+| `GEMINI_API_KEY` | **yes** | Backend secret only. Do not expose it to the browser, logs, or API responses |
+| `GEMINI_MODEL` | no | Currently unset. `gemini-2.5-flash-lite` is only a candidate; current free-tier eligibility is unverified and runtime startup is blocked |
+| `GEMINI_BILLING_DISABLED` | no | Operator attestation, default `false`; the app cannot inspect Google's billing settings |
 | `AI_DAILY_UNITS` | no | daily AI allowance per non-admin account (default `100`; see `docs/AI_LIMITS.md`). Administrators are never limited |
-| `OLLAMA_MODEL`, `OLLAMA_NUM_CTX`, `AI_TIMEOUT_MS` | no | `llama3.2:3b`, `8192`, `180000` |
+| `AI_TIMEOUT_MS` | no | Gemini request timeout (default `180000`) |
 
 `ANTHROPIC_BASE_URL` (or any other provider URL/key) is **not** read by the application and must not be set.
 
@@ -67,17 +71,13 @@ Process management: run under systemd / pm2 / a container with a restart policy.
 * Supabase advisor: the only open warning is "leaked password protection disabled" (a dashboard setting - enabling it is a product decision and is left to the owner).
 * Backups: use Supabase's own backup/PITR for the project; this repo adds none.
 
-## 5. The AI - an honest decision is required before real users
+## 5. AI deployment status
 
-The app can only use an Ollama running on the **same machine as the API** (loopback rule). That gives three realistic setups:
+The intended service is Google Gemini, accessed only by the backend. `AI_ENABLED=false` (the default) lets the non-AI API start; AI-generating routes return an explicit 503 and no request is sent to any AI provider. The current candidate model is listed in Google's model guide, but its exact current free-tier eligibility could not be conclusively verified from the official pricing documentation. The model is not approved in the runtime allowlist. Do not enable AI or bypass the startup check.
 
-| Option | Works today? | Cost | Reality check |
-|---|---|---|---|
-| **A. Local / student machine** - each student runs the app and Ollama on their own computer | Yes (this is the tested setup) | ₹0 | Needs a laptop able to run a 3B model (about 4 GB free RAM; CPU generation is slow - see the timings in the Phase 13 report). Not a "hosted website" experience. |
-| **B. Server-hosted local model** - one server runs the API *and* Ollama | Yes technically | Server cost (a CPU/GPU box) | Several students share one small model; generations queue behind each other (the app already refuses concurrent generation per conversation but has no global queue). Needs capacity planning and a load test that this phase did not do. |
-| **C. Future paid cloud AI** | **Not implemented, on purpose** | Per-use cost | Violates the current zero-cost policy. It would need a deliberate policy change, a new provider, cost caps and consent. Nothing in the code can do this today. |
+There is no local Ollama path, mock fallback, or automatic switching to another provider. When a verified model is eventually approved, Gemini quota exhaustion and provider errors must remain visible errors; they must never cause paid use or a provider switch. `GEMINI_BILLING_DISABLED=true` is only an operator attestation, not a check of Google Cloud billing.
 
-Until option B is sized and tested, the honest hosted configuration is: deploy web + API, leave Ollama unavailable, and every AI feature runs on the **labelled Mock** (users see "Demo" markers). That is safe and free but is not real tutoring.
+When enabled in the future, prompts and relevant user study content may be transmitted to Google Gemini. Google's unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. This must remain clearly disclosed to users; do not claim that Google never stores or uses the content. The application is intended for adults 18+ and professional/business use only.
 
 ## 6. Pre-release checklist
 
@@ -85,8 +85,8 @@ Until option B is sized and tested, the honest hosted configuration is: deploy w
 - [ ] `NODE_ENV=production`; `.env` only on the host; no secrets in Git (`.gitignore` excludes `.env`).
 - [ ] `npm run db:migrate` run against the target database; `npm run check:db` passes.
 - [ ] `npm run verify:bundle` passes on the exact build being shipped.
-- [ ] `npm run check:ai` shows Ollama/Mock only and 0 paid requests.
-- [ ] Decide A / B / Mock-only for the AI (section 5) and tell users which one they get.
+- [ ] `AI_ENABLED=false` is the safe deployment default. `npm run check:ai` reports the disabled state without making an AI request. If AI is enabled, the check must report `SAFE` only after model free-tier eligibility is verified and the billing-disabled attestation is set.
+- [ ] Confirm the AI-disabled notice is present and AI endpoints return `503 unavailable`; do not enable AI until model verification and the user-facing Google Gemini disclosure agree.
 - [ ] Supabase Auth: set the site URL/redirects for the real domain; decide on leaked-password protection and email confirmation.
 - [ ] A monitor on `/api/health/ready`.
 - [ ] The repository has **no commits yet** - make the first commit (review `git status`; `.env` must be untracked) before any CI/CD is attached.

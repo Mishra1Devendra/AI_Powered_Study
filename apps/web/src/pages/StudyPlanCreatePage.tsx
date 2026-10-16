@@ -72,7 +72,7 @@ export default function StudyPlanCreatePage() {
       <header className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Create a study plan</h1>
-          <p className="mt-1 text-sm text-slate-600">Your local AI chooses the topics; the app fits them into your days, before your exam.</p>
+          <p className="mt-1 text-sm text-slate-600">Google Gemini chooses the topics when AI is enabled; the app fits them into your days before your exam.</p>
         </div>
         {ai && (
           <div className="text-right text-xs text-slate-600">
@@ -84,7 +84,9 @@ export default function StudyPlanCreatePage() {
         )}
       </header>
       <AiUsageNote cost={AI_COST.planner} className="mt-4" />
-      {ai?.isMock && <p className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-900">The local AI isn&apos;t running, so the plan will use placeholder demo topics (plus any topics you type). Start your local AI for a real plan.</p>}
+      <p className="mt-3 text-sm leading-relaxed text-slate-600">
+        When enabled, subjects, topics, and study-plan details may be sent to Google Gemini. Google&apos;s unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI generation is currently unavailable while model free-tier eligibility is unverified.
+      </p>
 
       <div className="mt-6 rounded-(--radius-card) bg-white p-5 shadow-card ring-1 ring-slate-200/70 sm:p-7">
         {(options.state.status === "loading" || initial === undefined) && (

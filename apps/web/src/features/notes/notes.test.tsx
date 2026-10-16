@@ -349,10 +349,10 @@ describe("workspace", () => {
     }
   });
 
-  it("labels LOCAL AI with the model when a real local model is configured", async () => {
+  it("labels a historical model result without claiming it ran locally", async () => {
     useBackend({ notes: [NOTE], chunks: { [NOTE.id]: makeChunks(5) }, mock: false });
     renderNotes(`/notes/${NOTE.id}`);
-    expect(await screen.findByText("LOCAL AI · llama3.2:3b")).toBeInTheDocument();
+    expect(await screen.findByText("AI · llama3.2:3b")).toBeInTheDocument();
     expect(screen.queryByText("MOCK AI")).toBeNull();
   });
 
@@ -468,12 +468,12 @@ describe("workspace", () => {
     expect(screen.getAllByRole("article", { name: "Assistant replied" })).toHaveLength(1);
   });
 
-  it("shows a LOCAL AI badge on answers from a real local model", async () => {
+  it("shows a neutral AI badge for a historical model answer", async () => {
     useBackend({ notes: [NOTE], chunks: { [NOTE.id]: makeChunks(5) }, mock: false });
     const { user } = renderNotes(`/notes/${NOTE.id}`);
     await user.click(await screen.findByRole("button", { name: "Summarize" }));
     const reply = await screen.findByRole("article", { name: "Assistant replied" });
-    expect(within(reply).getByText("LOCAL AI · llama3.2:3b")).toBeInTheDocument();
+    expect(within(reply).getByText("AI · llama3.2:3b")).toBeInTheDocument();
   });
 
   it("never renders HTML from a document as markup", async () => {
