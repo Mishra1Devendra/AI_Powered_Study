@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { authUsers } from "drizzle-orm/supabase";
+import { authUsers } from "./auth.js";
 
 /**
  * Administration tables. Both are written and read ONLY by the API server (privileged connection) after it has proven the

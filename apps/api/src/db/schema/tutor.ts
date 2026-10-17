@@ -13,7 +13,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { authUid, authUsers, authenticatedRole } from "drizzle-orm/supabase";
+import { authUid, authUsers, authenticatedRole } from "./auth.js";
 import { documents } from "./documents.js";
 
 /**

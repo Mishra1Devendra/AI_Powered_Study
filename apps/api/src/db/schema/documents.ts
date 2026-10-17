@@ -15,7 +15,7 @@ import {
   uuid,
   foreignKey,
 } from "drizzle-orm/pg-core";
-import { authUid, authUsers, authenticatedRole } from "drizzle-orm/supabase";
+import { authUid, authUsers, authenticatedRole } from "./auth.js";
 
 const tsvector = customType<{ data: string }>({
   dataType() {

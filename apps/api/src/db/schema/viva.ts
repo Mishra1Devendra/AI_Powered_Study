@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, foreignKey, index, integer, jsonb, numeric, pgPolicy, pgTable, smallint, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
-import { authUid, authUsers, authenticatedRole } from "drizzle-orm/supabase";
+import { authUid, authUsers, authenticatedRole } from "./auth.js";
 import { documents } from "./documents.js";
 
 /**

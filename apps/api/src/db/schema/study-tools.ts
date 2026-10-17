@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, foreignKey, index, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
-import { authUsers } from "drizzle-orm/supabase";
+import { authUsers } from "./auth.js";
 
 /**
  * Flashcards and mind maps. Server-only tables (migration 0018): RLS is on and no client role has a grant or a policy, so the

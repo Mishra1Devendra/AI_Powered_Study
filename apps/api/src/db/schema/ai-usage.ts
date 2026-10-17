@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check, date, integer, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
-import { authUsers } from "drizzle-orm/supabase";
+import { authUsers } from "./auth.js";
 
 /**
  * How many AI "uses" each account has spent on each UTC day (migration 0019). Server-only: RLS is on and no client role has a

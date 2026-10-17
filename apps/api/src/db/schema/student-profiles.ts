@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check, pgPolicy, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { authUid, authUsers, authenticatedRole } from "drizzle-orm/supabase";
+import { authUid, authUsers, authenticatedRole } from "./auth.js";
 
 /**
  * Student profile data, kept separate from authentication.
