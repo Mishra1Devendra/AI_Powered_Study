@@ -4,7 +4,9 @@
     "api": {
       "root": "apps/api",
       "framework": "fastify",
-      "installCommand": "npm install --omit=dev"
+      "entrypoint": "src/server.ts",
+      "installCommand": "npm install --include=dev",
+      "buildCommand": "npm run build -w @copilot/shared"
     },
     "web": {
       "root": "apps/web",
