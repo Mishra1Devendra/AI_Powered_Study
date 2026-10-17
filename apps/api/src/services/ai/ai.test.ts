@@ -7,7 +7,7 @@ const base = {
   AI_PROVIDER: "gemini" as const,
   GEMINI_API_KEY: "AIzaTESTKEYTESTKEYTESTKEYTESTKEY12345",
   GEMINI_MODEL: "gemini-3.5-flash-lite",
-  GEMINI_BILLING_DISABLED: true,
+  GEMINI_BILLING: true,
   AI_TIMEOUT_MS: 1000,
 };
 
