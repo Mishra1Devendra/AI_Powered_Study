@@ -3,7 +3,8 @@
   "services": {
     "api": {
       "root": "apps/api",
-      "framework": "fastify"
+      "framework": "fastify",
+      "installCommand": "npm install --omit=dev"
     },
     "web": {
       "root": "apps/web",
