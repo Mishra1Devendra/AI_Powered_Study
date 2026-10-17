@@ -22,7 +22,7 @@ npm run verify:bundle -w @copilot/web   # fails if a secret, an AI SDK or a dev-
 
 * Public values only: `SUPABASE_URL` and `SUPABASE_ANON_KEY` (RLS protects the data, these are not secrets). The web build never reads the service-role key or any AI setting.
 * The web app calls **relative** URLs (`/api/...`). There is no `VITE_API_URL`. In production the static host and the API must therefore be reachable on the **same origin** (a reverse proxy that sends `/api/*` to the API and everything else to `index.html`). Without that, every request fails. This is the single most likely deployment mistake.
-* For Vercel, the root `vercel.json` routes `/api/*` to the API service first. The API service installs production dependencies only; the Vite web service includes development dependencies because its production build runs `tsc`, then rewrites client-side routes to `/index.html`.
+* For Vercel, the root `vercel.json` routes `/api/*` to the API service first. The API uses NodeNext TypeScript resolution to match its Node ESM runtime and resolve package types consistently. The API service installs production dependencies only; the Vite web service includes development dependencies because its production build runs `tsc`, then rewrites client-side routes to `/index.html`.
 * The API registers no CORS plugin on purpose (same-origin only). `WEB_ORIGIN` exists in the env schema but is not used for CORS today.
 * Single-page app: configure the host to answer unknown paths with `index.html` (client-side routes such as `/notes/...`).
 * The app ships a web manifest (installable) and **no service worker**: it does not work offline and does not claim to.
