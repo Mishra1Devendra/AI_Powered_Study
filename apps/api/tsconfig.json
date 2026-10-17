@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "strictNullChecks": true,
+    "strict": true,
     "types": ["node"]
   },
   "include": ["src", "drizzle.config.ts", "vitest.config.ts", "vitest.integration.config.ts"]
