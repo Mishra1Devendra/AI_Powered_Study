@@ -5,7 +5,7 @@
       "root": "apps/api",
       "framework": "fastify",
       "entrypoint": "src/server.ts",
-      "installCommand": "npm ci --prefix ../..",
+      "installCommand": "npm ci",
       "buildCommand": "npm run build -w @copilot/shared"
     },
     "web": {
