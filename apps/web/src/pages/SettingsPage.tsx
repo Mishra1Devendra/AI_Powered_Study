@@ -183,7 +183,7 @@ export default function SettingsPage() {
       <AiStatus />
       <Card className="mt-6">
         <h2 className="text-base font-semibold">AI use today</h2>
-        <p className="mt-1 text-sm text-slate-600">When AI is enabled, account-level daily limits apply to AI requests. Reading, studying cards and taking quizzes do not make AI requests. AI is currently unavailable while the approved Gemini free-tier model is unverified.</p>
+        <p className="mt-1 text-sm text-slate-600">When AI is enabled, account-level daily limits apply to AI requests. Reading, studying cards and taking quizzes do not make AI requests. AI is disabled until billing is confirmed off for the Google Cloud project.</p>
         <AiUsageNote className="mt-3" />
       </Card>
 

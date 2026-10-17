@@ -85,7 +85,7 @@ export default function StudyPlanCreatePage() {
       </header>
       <AiUsageNote cost={AI_COST.planner} className="mt-4" />
       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        When enabled, subjects, topics, and study-plan details may be sent to Google Gemini. Google&apos;s unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI generation is currently unavailable while model free-tier eligibility is unverified.
+        When enabled, subjects, topics, and study-plan details may be sent to Google Gemini. Google&apos;s unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI generation is disabled until billing is confirmed off for the Google Cloud project.
       </p>
 
       <div className="mt-6 rounded-(--radius-card) bg-white p-5 shadow-card ring-1 ring-slate-200/70 sm:p-7">

@@ -1,8 +1,8 @@
 # Knowledge Grounding (Phase 11)
 
 The AI uses the student's **own uploaded study material** as context and says plainly when the material does not contain the answer.
-When enabled, prompts and relevant note passages may be sent to Google Gemini; the current candidate model's free-tier eligibility is
-unverified, so the API is presently blocked from starting. See `AI_POLICY.md` for the privacy notice and status.
+When enabled, prompts and relevant note passages may be sent to Google Gemini. AI remains disabled until billing is confirmed off
+for the key's Google Cloud project. See `AI_POLICY.md` for the privacy notice and status.
 
 ```
 Upload -> Storage -> Extract -> Clean -> Chunk -> Store chunks (Postgres) -> Index (full-text)

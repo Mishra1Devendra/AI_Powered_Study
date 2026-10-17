@@ -16,7 +16,7 @@ Two study tools that turn a student's own notes (or a subject they type) into so
 * **Free-quota protection.** Every AI action is charged against the student's daily AI allowance (see `docs/AI_LIMITS.md`; a deck or a map costs 2 uses, administrators are never limited), at most 2 jobs run per student at a time, and the AI endpoints are also rate-limited to 6 per minute per client. Manual decks and cards cost nothing.
 * **The model's output is untrusted.** `study-tools/parse.ts` cleans it: control characters and markdown stripped, lengths capped, duplicate cards and sibling labels dropped, map depth (4), children per node (8) and total size (60) enforced, node ids assigned by the server. The notes are fenced in the prompt as data, never instructions.
 * **Spaced repetition** (`study-tools/srs.ts`, a small SM-2 variant). The browser only sends `again | hard | good | easy`; the server decides when the card comes back, so a tampered client cannot schedule or skip anything. Again = 10 minutes; Good = 1 day, then 3, then interval x ease; Easy jumps further and raises ease; Hard grows slowly and lowers ease. Each answer button shows when it would bring the card back.
-* **No provider fallback.** A Gemini quota/provider error fails the request; no local or demo content replaces it. AI startup is currently blocked while the candidate model's free-tier eligibility is unverified.
+* **No provider fallback.** A Gemini quota/provider error fails the request; no local or demo content replaces it. AI remains disabled until billing is confirmed off for the Google Cloud project.
 
 ## Data and privacy
 

@@ -55,7 +55,7 @@ advisory").
 ## Provider policy
 
 The active API has no local-model, mock, or alternate-provider fallback. Gemini quota or provider errors are returned safely.
-The API currently refuses to start because the candidate model's free-tier eligibility is unverified. See `AI_POLICY.md` for
+AI remains disabled until billing is confirmed off for the Google Cloud project. See `AI_POLICY.md` for
 the external-processing and data-use notice.
 
 ## State machine

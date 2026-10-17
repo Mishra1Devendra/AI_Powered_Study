@@ -47,7 +47,7 @@ Environment variables (see `.env.example`; real values go in the host's secret s
 | `AI_ENABLED` | no | Defaults to `false`; when false, API starts with generative AI routes returning `503 unavailable` and makes no external AI requests. Set `true` only after verifying the model and all AI policy gates |
 | `AI_PROVIDER` | no | Must be `gemini` when `AI_ENABLED=true`; ignored while AI is disabled. No alternate-provider fallback |
 | `GEMINI_API_KEY` | **yes** | Backend secret only. Do not expose it to the browser, logs, or API responses |
-| `GEMINI_MODEL` | no | Currently unset. `gemini-2.5-flash-lite` is only a candidate; current free-tier eligibility is unverified and runtime startup is blocked |
+| `GEMINI_MODEL` | no | `gemini-3.5-flash-lite` is approved for documented free-tier token pricing. The project's billing must still be verified disabled |
 | `GEMINI_BILLING_DISABLED` | no | Operator attestation, default `false`; the app cannot inspect Google's billing settings |
 | `AI_DAILY_UNITS` | no | daily AI allowance per non-admin account (default `100`; see `docs/AI_LIMITS.md`). Administrators are never limited |
 | `AI_TIMEOUT_MS` | no | Gemini request timeout (default `180000`) |
@@ -73,9 +73,9 @@ Process management: run under systemd / pm2 / a container with a restart policy.
 
 ## 5. AI deployment status
 
-The intended service is Google Gemini, accessed only by the backend. `AI_ENABLED=false` (the default) lets the non-AI API start; AI-generating routes return an explicit 503 and no request is sent to any AI provider. The current candidate model is listed in Google's model guide, but its exact current free-tier eligibility could not be conclusively verified from the official pricing documentation. The model is not approved in the runtime allowlist. Do not enable AI or bypass the startup check.
+The intended service is Google Gemini, accessed only by the backend. `AI_ENABLED=false` (the default) lets the non-AI API start; AI-generating routes return an explicit 503 and no request is sent to any AI provider. `gemini-3.5-flash-lite` is approved for documented free-tier token pricing. Keep AI disabled until you verify that billing is disabled for the Google Cloud project associated with the API key; never bypass the startup check.
 
-There is no local Ollama path, mock fallback, or automatic switching to another provider. When a verified model is eventually approved, Gemini quota exhaustion and provider errors must remain visible errors; they must never cause paid use or a provider switch. `GEMINI_BILLING_DISABLED=true` is only an operator attestation, not a check of Google Cloud billing.
+There is no local Ollama path, mock fallback, or automatic switching to another provider. Gemini quota exhaustion and provider errors remain visible errors; they never cause a provider switch. `GEMINI_BILLING_DISABLED=true` is only an operator attestation, not a check of Google Cloud billing. Google free-tier pricing applies only when the project uses the Free tier.
 
 When enabled in the future, prompts and relevant user study content may be transmitted to Google Gemini. Google's unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. This must remain clearly disclosed to users; do not claim that Google never stores or uses the content. The application is intended for adults 18+ and professional/business use only.
 

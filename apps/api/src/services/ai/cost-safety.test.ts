@@ -9,10 +9,10 @@ const input = {
 };
 
 describe("assessAiCost", () => {
-  it("blocks an unverified model and reports billing state as operator-attested only", () => {
+  it("blocks an unapproved model and reports billing state as operator-attested only", () => {
     const report = assessAiCost(input, {});
     expect(report).toMatchObject({
-      provider: "Google Gemini API (model eligibility unverified; disabled)",
+      provider: "Google Gemini API",
       model: "gemini-2.5-flash-lite",
       execution: "Online (Google Gemini API)",
       cloudRequest: true,
@@ -21,8 +21,17 @@ describe("assessAiCost", () => {
       estimatedCost: "UNKNOWN",
       result: "BLOCKED",
     });
-    expect(report.reasons.join(" ")).toMatch(/free-tier eligibility is unverified/i);
+    expect(report.reasons.join(" ")).toMatch(/not approved for the free tier/i);
     expect(report.reasons.join(" ")).toMatch(/operator-attested only/i);
+  });
+
+  it("permits the documented free-tier model only with a billing-disabled attestation", () => {
+    const report = assessAiCost({ ...input, GEMINI_MODEL: "gemini-3.5-flash-lite" }, {});
+    expect(report).toMatchObject({
+      model: "gemini-3.5-flash-lite",
+      billingDisabledAttested: true,
+      result: "SAFE",
+    });
   });
 
   it("blocks missing credentials, billing confirmation, or a non-Gemini provider", () => {

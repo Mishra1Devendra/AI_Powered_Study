@@ -72,7 +72,7 @@ export default function QuizCreatePage() {
       </header>
       <AiUsageNote cost={AI_COST.quiz} className="mt-4" />
       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        When enabled, quiz prompts and relevant note passages are sent to Google Gemini for processing. Google&apos;s unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI generation is currently unavailable while model free-tier eligibility is unverified.
+        When enabled, quiz prompts and relevant note passages are sent to Google Gemini for processing. Google&apos;s unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI generation is disabled until billing is confirmed off for the Google Cloud project.
       </p>
 
       <div className="mt-6 rounded-(--radius-card) bg-white p-5 shadow-card ring-1 ring-slate-200/70 sm:p-7">

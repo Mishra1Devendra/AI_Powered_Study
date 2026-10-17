@@ -6,15 +6,19 @@ import { geminiHttpError } from "./free/gemini.js";
 const base = {
   AI_PROVIDER: "gemini" as const,
   GEMINI_API_KEY: "AIzaTESTKEYTESTKEYTESTKEYTESTKEY12345",
-  GEMINI_MODEL: "gemini-2.5-flash-lite",
+  GEMINI_MODEL: "gemini-3.5-flash-lite",
   GEMINI_BILLING_DISABLED: true,
   AI_TIMEOUT_MS: 1000,
 };
 
 describe("the Gemini-only AI configuration", () => {
-  it("fails closed while the candidate model's free-tier eligibility is unverified", () => {
+  it("creates the approved free-tier Gemini provider without making a request", () => {
     const fetchImpl = vi.fn<typeof fetch>();
-    expect(() => createLLMProvider(base, fetchImpl)).toThrow(PolicyViolation);
+    expect(createLLMProvider(base, fetchImpl)).toMatchObject({
+      name: "free-ai",
+      model: "gemini-3.5-flash-lite",
+      isMock: false,
+    });
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
@@ -39,6 +43,7 @@ describe("the Gemini-only AI configuration", () => {
   it("requires a server-side key and an explicit verified model before creating a provider", () => {
     expect(() => createLLMProvider({ ...base, GEMINI_API_KEY: undefined })).toThrow(PolicyViolation);
     expect(() => createLLMProvider({ ...base, GEMINI_MODEL: undefined })).toThrow(PolicyViolation);
+    expect(() => createLLMProvider({ ...base, GEMINI_MODEL: "gemini-2.5-flash-lite" })).toThrow(PolicyViolation);
     expect(() => createLLMProvider({ ...base, GEMINI_BILLING_DISABLED: false })).toThrow(PolicyViolation);
   });
 

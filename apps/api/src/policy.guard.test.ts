@@ -50,12 +50,11 @@ describe("Gemini-only AI policy: source code", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("keeps provider origins fixed and leaves Gemini unapproved while its free-tier eligibility is unverified", () => {
+  it("keeps provider origins fixed and approves only the verified Gemini free-tier model", () => {
     const catalog = readFileSync(join(root, "apps/api/src/services/ai/free/catalog.ts"), "utf8");
     const origins = [...catalog.matchAll(/origin: "([^"]+)"/g)].map((m) => m[1]).sort();
     expect(origins).toEqual(["https://api.groq.com", "https://generativelanguage.googleapis.com", "https://openrouter.ai"]);
-    expect(catalog).toMatch(/gemini:.*models: \[\], defaultModel: null/s);
-    expect(catalog).toMatch(/eligibility.*unverified/i);
+    expect(catalog).toMatch(/gemini:.*models: \["gemini-3\.5-flash-lite"\], defaultModel: "gemini-3\.5-flash-lite"/s);
     expect(catalog).not.toMatch(/api\.openai\.com|api\.anthropic\.com|aiplatform|bedrock|azure/i);
   });
 

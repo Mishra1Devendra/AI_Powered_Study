@@ -11,8 +11,8 @@ Legend: PASS / PARTIAL / FAIL / DEFERRED. Evidence = what was actually run (see 
 | Authorization / RLS | PASS | Journey test: student B refused on every record of student A, over the API and directly in SQL (select/insert/update/delete) for all 15 tables, anon sees nothing; RLS on for 15/15 tables in the live DB. |
 | Storage security | PASS | Bucket private, 10 MB, 3 mime types; per-folder policies; cross-folder insert rejected; student delete/update cannot remove/rename. Storage HTTP API itself not exercised. |
 | Dashboard | PASS | Journey step + web tests. |
-| Tutor | BLOCKED | Historical Ollama result; active Gemini AI is disabled pending free-tier model verification. |
-| Notes | PARTIAL | Text-PDF processing/search tests remain applicable; AI assistant is unavailable while Gemini model eligibility is unverified. |
+| Tutor | BLOCKED | Historical Ollama result; active Gemini AI is disabled pending verification that Google Cloud billing is off. |
+| Notes | PARTIAL | Text-PDF processing/search tests remain applicable; AI assistant is unavailable pending verification that Google Cloud billing is off. |
 | Knowledge grounding | PASS | Bug found and fixed (filler words / chosen document -> false "not in your notes"); regression test added. |
 | Quiz | BLOCKED | Historical Ollama result; active Gemini AI is disabled pending free-tier model verification. |
 | Study plan | BLOCKED | Validation tests remain; active Gemini AI is disabled pending free-tier model verification. |
@@ -25,7 +25,7 @@ Legend: PASS / PARTIAL / FAIL / DEFERRED. Evidence = what was actually run (see 
 | PWA | PASS | Manifest + 4 icons served; no service worker registered; no offline claim. |
 | Error handling | PARTIAL | Typed errors are tested with scripted responses; no current live Gemini call was made. |
 | Performance | PARTIAL | Timers/listeners audited by reading code (all cleaned up; polling is plain API reads); no long-session profiling or load test. |
-| AI reliability | PARTIAL | Historical provider tests cover malformed replies and failures; focused Gemini handling tests are mocked. No network call is made, and model eligibility is still unverified. |
-| AI policy | BLOCKED | Gemini-only active factory; no provider fallback. Model is not approved until its free-tier eligibility is verified. Google processing/data-use disclosure is required. |
+| AI reliability | PARTIAL | Historical provider tests cover malformed replies and failures; focused Gemini handling tests are mocked. No live Gemini request was made. |
+| AI policy | BLOCKED | Gemini-only active factory; `gemini-3.5-flash-lite` is approved for free-tier token pricing. Keep disabled until the Google Cloud project billing state is verified. Google processing/data-use disclosure is required. |
 | Production build | HISTORICAL | The earlier typecheck/build result predates the current Gemini-only changes; rerun before deployment. |
 | Deployment readiness | BLOCKED | Same-origin proxy is still required; AI can stay disabled, but Gemini cannot be enabled pending model verification. Nothing deployed. |

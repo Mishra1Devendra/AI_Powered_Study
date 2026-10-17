@@ -99,7 +99,7 @@ private bucket `notes` (10 MB, pdf/txt/md MIME types); storage policies
 
 ## Running locally
 
-The API currently refuses to start because Google's current free-tier eligibility for the candidate model is unverified.
+AI is disabled by default; enable it only after confirming that billing is disabled for the Gemini key's Google Cloud project.
 There is no Ollama, mock, or other-provider fallback. Do not make live AI requests to establish model eligibility; see
 `AI_POLICY.md` and `FREE_AI.md`.
 

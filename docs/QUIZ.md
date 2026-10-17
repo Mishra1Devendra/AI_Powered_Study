@@ -2,7 +2,7 @@
 
 Students create a quiz from their own notes or from a subject/topic, take it, and get a score computed
 by the server, explanations, topic-by-topic accuracy and a mistake review. The active API is configured for Google Gemini only;
-the current candidate model's free-tier eligibility is unverified, so API startup is blocked. When enabled, quiz prompts and
+AI remains disabled until billing is confirmed off for the Google Cloud project. When enabled, quiz prompts and
 relevant note passages may be sent to Google. There is no local-model or alternate-provider fallback; see `AI_POLICY.md`.
 
 ## Flow

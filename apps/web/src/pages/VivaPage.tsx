@@ -64,7 +64,7 @@ export default function VivaPage() {
           </p>
         )}
         <p className="mt-4 max-w-xl text-xs leading-relaxed text-white/75">
-          When enabled, your viva topic and answers may be sent to Google Gemini. Google's unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI is currently unavailable while model free-tier eligibility is unverified.
+          When enabled, your viva topic and answers may be sent to Google Gemini. Google's unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. AI is disabled until billing is confirmed off for the Google Cloud project.
         </p>
       </header>
 

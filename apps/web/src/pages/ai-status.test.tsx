@@ -30,7 +30,7 @@ beforeEach(() => {
     countersSince: "2026-10-06T08:00:00.000Z",
     lastAnswered: null,
     steps: [
-      { order: 1, service: "Google Gemini", model: "gemini-2.5-flash-lite (eligibility unverified)", where: "online", state: "not_running", restingSeconds: 0, usedToday: 0, limitPerMinute: null, limitPerDay: null, limitNote: "Free-tier eligibility unverified; provider disabled.", lastResult: null, lastAt: null },
+      { order: 1, service: "Google Gemini", model: "gemini-3.5-flash-lite", where: "online", state: "not_running", restingSeconds: 0, usedToday: 0, limitPerMinute: null, limitPerDay: null, limitNote: "AI remains disabled until Google Cloud billing is verified disabled.", lastResult: null, lastAt: null },
     ],
   };
   vi.stubGlobal(

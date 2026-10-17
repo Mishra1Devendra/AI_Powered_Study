@@ -62,7 +62,7 @@ export function assessAiCost(input: CostInput, source: NodeJS.ProcessEnv = proce
     try {
       approvedModel = assertApprovedFreeModel("gemini", model);
     } catch (error) {
-      reasons.push(error instanceof PolicyViolation ? "The configured Gemini model's current free-tier eligibility is unverified; AI startup is disabled." : "The Gemini model could not be verified.");
+      reasons.push(error instanceof PolicyViolation ? "The configured Gemini model is not approved for the free tier; AI startup is disabled." : "The Gemini model could not be verified.");
     }
   }
   if (!input.GEMINI_BILLING_DISABLED) {
@@ -77,7 +77,7 @@ export function assessAiCost(input: CostInput, source: NodeJS.ProcessEnv = proce
   const safe = reasons.length === 1 && billingDisabledAttested && Boolean(approvedModel) && Boolean(input.GEMINI_API_KEY?.trim());
   if (safe) reasons.length = 0;
   return {
-    provider: "Google Gemini API (model eligibility unverified; disabled)",
+    provider: "Google Gemini API",
     model: approvedModel ?? model,
     execution: "Online (Google Gemini API)",
     cloudRequest: true,

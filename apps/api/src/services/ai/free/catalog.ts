@@ -2,10 +2,10 @@ import { PolicyViolation } from "../errors.js";
 
 /**
  * Provider/model catalog retained for legacy adapter tests. Only Gemini is selected by the active factory.
- * Gemini 2.5 Flash-Lite appears in Google's model guide, but its current free-tier eligibility could not be conclusively verified
- * from Google's pricing documentation. It therefore is intentionally not approved and startup fails closed.
+ * Gemini 3.5 Flash-Lite has free-tier token pricing in Google's pricing documentation. The Google project must still have
+ * billing disabled so requests cannot move to a paid tier when free-tier quotas are exhausted.
  *
- *   Gemini model eligibility: UNVERIFIED. No Gemini model is approved for execution.
+ *   Gemini model eligibility: gemini-3.5-flash-lite is approved for free-tier token use.
  *
  * Deliberately NOT here (could not be confirmed free from official pages, so by policy they are not used): Cloudflare Workers AI,
  * Mistral, Cerebras, Hugging Face. Add one only after verifying the exact model, that no card is needed, and what happens when the
@@ -33,7 +33,7 @@ export interface FreeProviderSpec {
 
 export const FREE_PROVIDERS: Record<FreeProviderId, FreeProviderSpec> = {
   groq: { id: "groq", origin: "https://api.groq.com", models: ["openai/gpt-oss-20b", "openai/gpt-oss-120b"], defaultModel: "openai/gpt-oss-20b", freeTierMayTrainOnContent: false, displayName: "Groq", limits: { perMinute: 30, perDay: 1000, note: "Free plan limits for these models (30 requests/min, 1,000/day). Over the limit gives an error, never a charge." } },
-  gemini: { id: "gemini", origin: "https://generativelanguage.googleapis.com", models: [], defaultModel: null, freeTierMayTrainOnContent: true, displayName: "Google Gemini", limits: { perMinute: null, perDay: null, note: "Free-tier eligibility of the candidate model is unverified; AI startup is blocked." } },
+  gemini: { id: "gemini", origin: "https://generativelanguage.googleapis.com", models: ["gemini-3.5-flash-lite"], defaultModel: "gemini-3.5-flash-lite", freeTierMayTrainOnContent: true, displayName: "Google Gemini", limits: { perMinute: null, perDay: null, note: "Free-tier quotas are account-specific. Disable Google Cloud billing to prevent paid-tier usage." } },
   openrouter: { id: "openrouter", origin: "https://openrouter.ai", models: [], defaultModel: null, freeTierMayTrainOnContent: true, displayName: "OpenRouter", limits: { perMinute: 20, perDay: 50, note: "Free (:free) models without bought credits: 20 requests/min, 50/day. Over the limit gives an error, never a charge." } },
 };
 
