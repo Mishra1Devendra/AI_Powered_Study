@@ -1,6 +1,6 @@
 # Daily AI limits
 
-Every account **except administrators** has a daily allowance of AI "uses"; administrators have none (and are never counted). Google Gemini is the only intended provider, and `gemini-3.5-flash-lite` has documented free-tier token pricing. AI remains disabled until billing is confirmed off for the key's Google Cloud project. These application limits do not establish provider quota or pricing terms; see `AI_POLICY.md`.
+Every signed-in account **except administrators** can use AI when it is enabled for the deployment. Non-admin accounts have a daily allowance of AI "uses"; administrators have none (and are never counted). Google Gemini is the only intended provider, and `gemini-3.5-flash-lite` has documented free-tier token pricing. Enable it only after confirming billing is disabled for the key's Google Cloud project. These application limits do not establish provider quota or pricing terms; see `AI_POLICY.md`.
 
 ## What costs what
 

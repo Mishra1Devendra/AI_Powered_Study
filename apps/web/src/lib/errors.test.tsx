@@ -134,12 +134,20 @@ describe("Settings", () => {
     expect(await screen.findByText("AI disabled")).toBeInTheDocument();
     expect(screen.getByText("Disabled; no external AI requests")).toBeInTheDocument();
     expect(screen.getByText(/AI is disabled for this deployment, so prompts and study content are not currently sent to an AI provider/i)).toBeInTheDocument();
-    expect(screen.getByText(/If Gemini is enabled later after model eligibility is verified, relevant prompts and study content may be sent to Google/i)).toBeInTheDocument();
+    expect(screen.getByText(/If enabled later, relevant content may be sent to Google/i)).toBeInTheDocument();
     expect(screen.getByText(/may be used to improve products and may be reviewed by humans/i)).toBeInTheDocument();
     expect(screen.getByText(/will not switch to another provider/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     const text = document.body.textContent ?? "";
     expect(text).not.toMatch(/api[_ -]?key|service[_ -]?role|password|secret|token|sk-|postgres/i);
+  });
+
+  it("shows Gemini as available and discloses processing when AI is enabled", async () => {
+    stub(() => health({ provider: "free-ai", isMock: false, model: "gemini-3.5-flash-lite" }));
+    renderSettings();
+    expect(await screen.findByText("Google Gemini · online")).toBeInTheDocument();
+    expect(screen.getByText(/When Gemini AI is enabled, prompts and relevant study content may be sent to Google for processing/i)).toBeInTheDocument();
+    expect(screen.getByText(/Signed-in accounts can use AI when it is enabled for this deployment/i)).toBeInTheDocument();
   });
 
   it("labels demo AI plainly when configured", async () => {

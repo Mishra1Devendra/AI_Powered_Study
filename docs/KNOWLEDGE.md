@@ -1,7 +1,7 @@
 # Knowledge Grounding (Phase 11)
 
 The AI uses the student's **own uploaded study material** as context and says plainly when the material does not contain the answer.
-When enabled, prompts and relevant note passages may be sent to Google Gemini. AI remains disabled until billing is confirmed off
+When enabled, prompts and relevant note passages may be sent to Google Gemini. Enable AI only after billing is confirmed off
 for the key's Google Cloud project. See `AI_POLICY.md` for the privacy notice and status.
 
 ```

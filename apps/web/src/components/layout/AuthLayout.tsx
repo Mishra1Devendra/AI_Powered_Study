@@ -90,7 +90,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-2 text-sm text-slate-600">{subtitle}</p>
           <p className="mt-3 text-xs leading-relaxed text-slate-600">
-            AI is disabled for this deployment, so prompts and study content are not currently sent to an AI provider. If Gemini is enabled later after model eligibility is verified, relevant content may be sent to Google. Google's unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans.
+            When Gemini AI is enabled, prompts and relevant study content may be sent to Google for processing. Google's unpaid-tier terms say submitted content may be used to improve products and may be reviewed by humans. Avoid including sensitive personal information.
           </p>
           <div className="mt-8">{children}</div>
         </div>

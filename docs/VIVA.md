@@ -55,7 +55,7 @@ advisory").
 ## Provider policy
 
 The active API has no local-model, mock, or alternate-provider fallback. Gemini quota or provider errors are returned safely.
-AI remains disabled until billing is confirmed off for the Google Cloud project. See `AI_POLICY.md` for
+Enable AI only after billing is confirmed off for the Google Cloud project. See `AI_POLICY.md` for
 the external-processing and data-use notice.
 
 ## State machine

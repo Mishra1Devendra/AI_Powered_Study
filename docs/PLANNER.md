@@ -18,7 +18,7 @@ POST /api/study-plans/generate  ->  202 { plan: { status: "generating" } }
 - One generation per student at a time (409 `generation_in_progress`). The form and Regenerate button also guard against double clicks.
 - The model's answer is untrusted: unknown subjects are ignored, names are cleaned and length-limited, "Day 3:"/date prefixes are stripped, minutes are clamped, at most 8 AI topics per subject (the student's own topics always come first, up to 12). A reply cut off at the token limit keeps its complete topics (`salvagePlanJson`); an unreadable reply fails the plan with a safe message and saves nothing.
 - Gemini provider errors stop the request; there is no local-model, mock, or alternate-provider fallback. The approved Gemini model has
-  free-tier token pricing, but AI remains disabled until billing is confirmed off for the Google Cloud project. When enabled, prompts containing study-plan data
+  free-tier token pricing, but AI should be enabled only after billing is confirmed off for the Google Cloud project. When enabled, prompts containing study-plan data
   may be sent to Google; see `AI_POLICY.md`.
 - Weak topics: real quiz accuracy per topic (the shared "Weak" definition: under 50% over at least 5 questions) is passed to the prompt and gets an extra revision session.
 - If time is short, lower-priority topics are listed as "Not scheduled" instead of being silently dropped.

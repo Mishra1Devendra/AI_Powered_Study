@@ -43,11 +43,10 @@ describe("what the sign-in page says after a confirmation-email link", () => {
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
   });
 
-  it("shows the AI-disabled state and Gemini data-processing disclosure on ordinary sign-in", async () => {
+  it("shows the Gemini data-processing disclosure on ordinary sign-in", async () => {
     renderLogin("/login");
     await screen.findByLabelText("Email");
-    expect(screen.getByText(/AI is disabled for this deployment, so prompts and study content are not currently sent to an AI provider/i)).toBeInTheDocument();
-    expect(screen.getByText(/If Gemini is enabled later after model eligibility is verified, relevant content may be sent to Google/i)).toBeInTheDocument();
+    expect(screen.getByText(/When Gemini AI is enabled, prompts and relevant study content may be sent to Google for processing/i)).toBeInTheDocument();
     expect(screen.getByText(/may be used to improve products and may be reviewed by humans/i)).toBeInTheDocument();
   });
 

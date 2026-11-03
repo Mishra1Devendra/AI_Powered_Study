@@ -60,7 +60,10 @@ function AiStatus() {
       )}
       {health && health !== "error" && health.ai.isMock && <p className="mt-3 text-sm text-slate-600">This environment is using canned demo text, labelled as demo.</p>}
       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        AI is disabled for this deployment, so prompts and study content are not currently sent to an AI provider. If Gemini is enabled later after model eligibility is verified, relevant prompts and study content may be sent to Google. Google's terms for unpaid Gemini API use say submitted content may be used to improve products and may be reviewed by humans. Avoid including sensitive personal information. The app will not switch to another provider.
+        {health && health !== "error" && health.ai.provider === "disabled"
+          ? "AI is disabled for this deployment, so prompts and study content are not currently sent to an AI provider. If enabled later, relevant content may be sent to Google."
+          : "When Gemini AI is enabled, prompts and relevant study content may be sent to Google for processing."}{" "}
+        Google&apos;s terms for unpaid Gemini API use say submitted content may be used to improve products and may be reviewed by humans. Avoid including sensitive personal information. The app will not switch to another provider.
       </p>
     </Card>
   );
@@ -183,7 +186,7 @@ export default function SettingsPage() {
       <AiStatus />
       <Card className="mt-6">
         <h2 className="text-base font-semibold">AI use today</h2>
-        <p className="mt-1 text-sm text-slate-600">When AI is enabled, account-level daily limits apply to AI requests. Reading, studying cards and taking quizzes do not make AI requests. AI is disabled until billing is confirmed off for the Google Cloud project.</p>
+        <p className="mt-1 text-sm text-slate-600">Signed-in accounts can use AI when it is enabled for this deployment. Account-level daily limits apply to AI requests. Reading, studying cards and taking quizzes do not make AI requests.</p>
         <AiUsageNote className="mt-3" />
       </Card>
 
