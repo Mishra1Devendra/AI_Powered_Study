@@ -86,7 +86,7 @@ const openSearch = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(await screen.findByRole("button", { name: "Search" }));
   return screen.findByRole("dialog", { name: "Search" });
 };
-const box = () => screen.getByRole("combobox", { name: /Search your notes/ });
+const box = () => screen.getByRole("combobox", { name: /Search your study material/ });
 
 describe("global search", () => {
   it("opens from the top bar and from Ctrl+K, focuses the box, and closes with Escape returning focus", async () => {
@@ -164,6 +164,19 @@ describe("global search", () => {
     await user.click(await within(dialog).findByRole("option", { name: /Physics · Thermodynamics/ }));
     expect(where.pathname).toBe("/tutor");
     expect(where.state).toEqual({ draft: "Help me study Thermodynamics.", subject: "Physics", topic: "Thermodynamics" });
+    const sent = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === "POST");
+    expect(sent).toHaveLength(0);
+  });
+
+  it("lets a signed-in user ask any search question in the AI Tutor without sending it automatically", async () => {
+    const { user } = renderShell();
+    const dialog = await openSearch(user);
+    await user.type(box(), "How does heat transfer work?");
+    const ask = await within(dialog).findByRole("option", { name: /Ask AI: How does heat transfer work\?/ });
+    expect(ask).toHaveTextContent("It is not sent until you press Send.");
+    await user.click(ask);
+    expect(where.pathname).toBe("/tutor");
+    expect(where.state).toEqual({ draft: "How does heat transfer work?" });
     const sent = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === "POST");
     expect(sent).toHaveLength(0);
   });

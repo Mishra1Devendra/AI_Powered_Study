@@ -38,11 +38,22 @@ const GROUPS: Array<{ key: keyof Pick<SearchResponse, "documents" | "quizzes" | 
 ];
 
 function toItems(query: string, data: SearchResponse | null): Item[] {
-  const needle = query.trim().toLowerCase();
+  const question = query.trim();
+  const needle = question.toLowerCase();
   const pages: Item[] = PAGES.filter((p) => needle === "" || p.title.toLowerCase().includes(needle))
     .slice(0, needle === "" ? 12 : 4)
     .map((p) => ({ key: `page:${p.to}:${p.title}`, group: "Pages", title: p.title, detail: p.detail, to: p.to }));
-  if (!data) return pages;
+  const askAi: Item[] = question.length >= SEARCH_LIMITS.minChars
+    ? [{
+        key: "ask-ai",
+        group: "Ask AI",
+        title: `Ask AI: ${question}`,
+        detail: "Open the AI Tutor with this question. It is not sent until you press Send.",
+        to: "/tutor",
+        state: { draft: question },
+      }]
+    : [];
+  if (!data) return [...pages, ...askAi];
   const found: Item[] = GROUPS.flatMap((g) => data[g.key].map((h): Item => ({ key: `${g.key}:${h.id}`, group: g.label, title: h.title, detail: h.detail, to: h.href })));
   const topics: Item[] = data.topics.slice(0, SEARCH_LIMITS.perGroup).map((t, i) => {
     const label = [t.subject, t.topic].filter(Boolean).join(" · ");
@@ -56,15 +67,14 @@ function toItems(query: string, data: SearchResponse | null): Item[] {
       state: { draft: `Help me study ${t.topic ?? t.subject ?? "this"}.`, ...(t.subject ? { subject: t.subject } : {}), ...(t.topic ? { topic: t.topic } : {}) },
     };
   });
-  return [...found, ...topics, ...pages];
+  return [...found, ...topics, ...pages, ...askAi];
 }
 
 type Load = { status: "idle" } | { status: "loading" } | { status: "ready"; data: SearchResponse } | { status: "error"; message: string };
 
 /**
  * Global search / quick navigation. Keyboard first (type, Up/Down, Enter, Esc) and a full-screen sheet on phones.
- * It searches the student's OWN notes, quizzes, study plans, tutor chats, subjects and topics by title - it is navigation,
- * not question answering, and no AI model is involved.
+ * It searches the student's OWN records and lets them open the AI Tutor with a question; nothing is sent until they press Send.
  */
 export function SearchPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { client } = useAuth();
@@ -158,7 +168,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
     else acc.push({ label: item.group, entries: [{ item, index }] });
     return acc;
   }, []);
-  const hasRealResults = load.status === "ready" && items.some((i) => i.group !== "Pages");
+  const hasRealResults = load.status === "ready" && items.some((i) => i.group !== "Pages" && i.group !== "Ask AI");
   const activeId = items[active] ? `${listId}-opt-${active}` : undefined;
 
   return createPortal(
@@ -184,11 +194,11 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
             aria-controls={listId}
             aria-activedescendant={activeId}
             aria-autocomplete="list"
-            aria-label="Search your notes, quizzes, plans and topics"
+            aria-label="Search your study material or ask AI"
             value={query}
             maxLength={SEARCH_LIMITS.maxChars}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search your study material"
+            placeholder="Search study material or ask AI"
             autoComplete="off"
             className="h-11 min-w-0 flex-1 bg-transparent text-base text-slate-900 placeholder:text-slate-500 focus:outline-none"
           />
